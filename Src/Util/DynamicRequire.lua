@@ -1,17 +1,12 @@
 local scriptPlate = [[
-local ___env = getfenv()
-local script = ___env.script
-local require = ___env.require
-
-%s
+local script = getfenv().script local require = getfenv().require %s
 ]]
 
 local modules = {}
 
 local function dynamicRequire(module, overrideRequire)
 	local newSource = string.format(scriptPlate, module.Source)
-	local func, err = loadstring(newSource)
-	if err then error(err) end
+	local func = loadstring(newSource)
 	local env = getfenv(func)
 	env.script = module
 	env.require = overrideRequire
@@ -65,5 +60,6 @@ end
 
 return function(module)
 	local result = (dynamicRequireImpl(module, nil))
+	print("Finished")
 	return result
 end
