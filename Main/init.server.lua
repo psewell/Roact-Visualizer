@@ -8,6 +8,10 @@ game:GetService("UserInputService").InputEnded:Connect(function(input)
 	end
 end)
 
-TestEZ.TestBootstrap:run({
-	script.Parent.Src.Util,
-})
+-- Run tests if plugin is a child of workspace.
+-- This means it is being worked on.
+if script.Parent.Parent == workspace then
+	TestEZ.TestBootstrap:run({
+		script.Parent.Src.Util,
+	})
+end

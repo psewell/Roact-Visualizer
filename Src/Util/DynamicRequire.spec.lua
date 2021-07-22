@@ -122,5 +122,39 @@ return function()
 			result = DynamicRequire.Require(testModule)
 			expect(result).to.equal("World")
 		end)
+
+		it("should throw errors if the underlying code breaks", function()
+			local testModule = Instance.new("ModuleScript")
+			testModule.Source = [[return workspace.NONEXISTENTOBJECT]]
+			expect(function()
+				DynamicRequire.Require(testModule)
+			end).to.throw()
+		end)
+
+		it("should recover from errors", function()
+			local testModule = Instance.new("ModuleScript")
+			testModule.Source = [[return workspace.NONEXISTENTOBJECT]]
+			expect(function()
+				DynamicRequire.Require(testModule)
+			end).to.throw()
+			testModule.Source = [[return "Fixed"]]
+			local result = DynamicRequire.Require(testModule)
+			expect(result).to.equal("Fixed")
+		end)
+
+		it("should re-require if a dependency is deleted", function()
+			local testModule = Instance.new("ModuleScript")
+			testModule.Source = [[return require(script.Dependency)]]
+			local dependency = Instance.new("ModuleScript")
+			dependency.Source = [[return "Hello"]]
+			dependency.Name = "Dependency"
+			dependency.Parent = testModule
+			local result = DynamicRequire.Require(testModule)
+			expect(result).to.equal("Hello")
+			dependency:Destroy()
+			expect(function()
+				DynamicRequire.Require(testModule)
+			end).to.throw()
+		end)
 	end)
 end
