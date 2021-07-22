@@ -1,0 +1,22 @@
+{
+  "name": "Roact Visualizer",
+
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "Roact-Visualizer": {
+        "$className": "Folder",
+        "Main": {
+          "$path": "Main"
+        },
+        "Src": {
+          "$path": "Src"
+        },
+        "Packages": {
+          "$path": "Packages"
+        }
+      }
+    }
+  }
+}
