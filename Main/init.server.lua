@@ -1,5 +1,9 @@
-local DynamicRequire = require(script.Parent.Src.Util.DynamicRequire)
-local TestEZ = require(script.Parent.Packages.TestEZ)
+local main = script.Parent
+local TestEZ = require(main.Packages.TestEZ)
+local Roact = require(main.Packages.Roact)
+local DynamicRequire = require(main.Src.Util.DynamicRequire)
+local PluginContext = require(main.Src.Contexts.PluginContext)
+local MainController = require(main.Src.Components.MainController)
 
 game:GetService("UserInputService").InputEnded:Connect(function(input)
 	if input.KeyCode == Enum.KeyCode.F then
@@ -7,6 +11,12 @@ game:GetService("UserInputService").InputEnded:Connect(function(input)
 		print("Finished")
 	end
 end)
+
+Roact.mount(Roact.createElement(PluginContext.Provider, {
+	value = plugin,
+}, {
+	MainController = Roact.createElement(MainController),
+}))
 
 -- Run tests if plugin is a child of workspace.
 -- This means it is being worked on.
