@@ -2,8 +2,7 @@ local scriptPlate = [[
 local script = getfenv().script local require = getfenv().require %s
 ]]
 
-local DynamicRequire = {}
-
+local DynamicRequire
 local modules = {}
 
 local function dynamicRequire(module, overrideRequire)
@@ -75,9 +74,13 @@ end
 
 local function clear()
 	modules = {}
+	DynamicRequire.___modules_TEST_ONLY = modules
 end
 
-return {
+DynamicRequire = {
 	Require = req,
 	Clear = clear,
+	___modules_TEST_ONLY = modules,
 }
+
+return DynamicRequire

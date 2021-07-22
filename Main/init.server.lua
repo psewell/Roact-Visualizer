@@ -1,4 +1,5 @@
 local DynamicRequire = require(script.Parent.Src.Util.DynamicRequire)
+local TestEZ = require(script.Parent.Packages.TestEZ)
 
 game:GetService("UserInputService").InputEnded:Connect(function(input)
 	if input.KeyCode == Enum.KeyCode.F then
@@ -6,3 +7,7 @@ game:GetService("UserInputService").InputEnded:Connect(function(input)
 		print("Finished")
 	end
 end)
+
+TestEZ.TestBootstrap:run({
+	script.Parent.Src.Util,
+})
