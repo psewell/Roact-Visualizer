@@ -2,6 +2,8 @@ local scriptPlate = [[
 local script = getfenv().script local require = getfenv().require %s
 ]]
 
+local DynamicRequire = {}
+
 local modules = {}
 
 local function dynamicRequire(module, overrideRequire)
@@ -15,6 +17,24 @@ local function dynamicRequire(module, overrideRequire)
 	return result
 end
 
+local function checkDependencies(id)
+	local isDirty = modules[id].IsDirty
+	if not isDirty then
+		for dependencyId, dependencyModule in pairs(modules[id].Dependencies) do
+			if modules[dependencyId] == nil or dependencyModule == nil
+				or dependencyModule.Parent == nil or modules[dependencyId].IsDirty
+				or modules[dependencyId].Source ~= dependencyModule.Source then
+				return true
+			end
+			local isDependencyDirty = checkDependencies(dependencyId)
+			if isDependencyDirty then
+				return true
+			end
+		end
+	end
+	return isDirty
+end
+
 local function dynamicRequireImpl(module, parentId)
 	local src = module.Source
 	local id = module:GetDebugId()
@@ -25,17 +45,7 @@ local function dynamicRequireImpl(module, parentId)
 		}
 	end
 
-	local isDirty = modules[id].IsDirty
-	if not isDirty then
-		for dependencyId, dependencyModule in pairs(modules[id].Dependencies) do
-			if modules[dependencyId] == nil or modules[dependencyId].IsDirty
-				or modules[dependencyId].Source ~= dependencyModule.Source then
-				isDirty = true
-				break
-			end
-		end
-	end
-
+	local isDirty = checkDependencies(id)
 	if parentId and modules[parentId] then
 		modules[parentId].Dependencies[id] = module
 	end
@@ -58,8 +68,16 @@ local function dynamicRequireImpl(module, parentId)
 	end
 end
 
-return function(module)
+local function req(module)
 	local result = (dynamicRequireImpl(module, nil))
-	print("Finished")
 	return result
 end
+
+local function clear()
+	modules = {}
+end
+
+return {
+	Require = req,
+	Clear = clear,
+}
