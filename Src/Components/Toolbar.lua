@@ -6,6 +6,7 @@ local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSelectingModule)
+local Reload = require(main.Src.Reducers.PluginState.Actions.Reload)
 local TextButton = require(main.Src.Components.TextButton)
 local getColor = require(main.Src.Util.getColor)
 
@@ -65,10 +66,10 @@ function Toolbar:render()
 
 		RefreshButton = Roact.createElement(TextButton, {
 			LayoutOrder = 2,
-			Text = "Refresh",
+			Text = "Reload",
 			Icon = "rbxassetid://69395121",
 			ImageOffset = Vector2.new(0, 1),
-			OnActivated = props.StartSelecting,
+			OnActivated = props.Reload,
 		}),
 	})
 end
@@ -84,6 +85,10 @@ end, function(dispatch)
 			dispatch(SetSelectingModule({
 				SelectingModule = true,
 			}))
+		end,
+
+		Reload = function()
+			dispatch(Reload({}))
 		end,
 	}
 end)(Toolbar)

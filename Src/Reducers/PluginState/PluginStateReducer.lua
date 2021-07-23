@@ -8,6 +8,7 @@ local initialState = {
 	Theme = settings().Studio.Theme,
 	ThemeConnection = nil,
 	RoactInstall = nil,
+	ReloadCode = "",
 }
 
 local function registerActions()

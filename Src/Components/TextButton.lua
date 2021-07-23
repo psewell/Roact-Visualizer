@@ -36,7 +36,7 @@ function TextButton:render()
 	local default = props.Default
 
 	local textSize = GetTextSize({
-		Font = Enum.Font.SourceSansSemibold,
+		Font = Enum.Font.SourceSans,
 		TextSize = 18,
 		Text = props.Text,
 	})
@@ -50,7 +50,7 @@ function TextButton:render()
 	return Roact.createElement("TextButton", {
 		LayoutOrder = props.LayoutOrder,
 		Size = UDim2.fromOffset(width, 26),
-		Font = Enum.Font.SourceSansSemibold,
+		Font = Enum.Font.SourceSans,
 		TextSize = 18,
 		Text = props.Text,
 		BackgroundColor3 = getColor(function(c)
