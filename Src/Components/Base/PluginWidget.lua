@@ -5,7 +5,7 @@
 		new enabled state as a parameter.
 ]]
 
-local main = script.Parent.Parent.Parent.Parent
+local main = script:FindFirstAncestor("Roact-Visualizer")
 local generateId = require(main.Packages.generateId)
 local Roact = require(main.Packages.Roact)
 local PluginContext = require(main.Src.Contexts.PluginContext)

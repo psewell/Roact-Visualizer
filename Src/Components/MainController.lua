@@ -1,12 +1,16 @@
 --[[
 	Main controller for Roact-Visualizer.
+	Controls the plugin widget, toolbar, and buttons.
 ]]
 
-local main = script.Parent.Parent.Parent
+local tooltip = [[Rapidly visualize and prototype Roact components and trees.]]
+
+local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local PluginWidget = require(main.Src.Components.Base.PluginWidget)
 local PluginToolbar = require(main.Src.Components.Base.PluginToolbar)
 local PluginButton = require(main.Src.Components.Base.PluginButton)
+local MainScreen = require(main.Src.Components.MainScreen)
 
 local MainController = Roact.PureComponent:extend("MainController")
 
@@ -51,16 +55,20 @@ function MainController:render()
 			ShouldRestore = true,
 			OnWidgetRestored = self.setEnabled,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		}, {
+			MainScreen = Roact.createElement(MainScreen),
 		}),
 
 		Toolbar = Roact.createElement(PluginToolbar, {
-			Title = "Roact Visualizer",
+			Title = "Roact",
 			RenderButtons = function(toolbar)
 				return Roact.createElement(PluginButton, {
 					Title = "Roact Visualizer",
+					Tooltip = tooltip,
 					Toolbar = toolbar,
 					OnClick = self.toggle,
 					Active = enabled,
+					Icon = "rbxassetid://7138347364",
 				})
 			end,
 		}),

@@ -2,7 +2,7 @@
 	A wrapper for a PluginToolbar.
 ]]
 
-local main = script.Parent.Parent.Parent.Parent
+local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 

@@ -2,7 +2,7 @@
 	Roact context for accessing the Plugin object.
 ]]
 
-local main = script.Parent.Parent.Parent
+local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local PluginContext = Roact.createContext("Plugin")
 
