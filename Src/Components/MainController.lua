@@ -5,6 +5,8 @@
 local main = script.Parent.Parent.Parent
 local Roact = require(main.Packages.Roact)
 local PluginWidget = require(main.Src.Components.Base.PluginWidget)
+local PluginToolbar = require(main.Src.Components.Base.PluginToolbar)
+local PluginButton = require(main.Src.Components.Base.PluginButton)
 
 local MainController = Roact.PureComponent:extend("MainController")
 
@@ -24,6 +26,14 @@ function MainController:init()
 			enabled = false,
 		})
 	end
+
+	self.toggle = function()
+		self:setState(function(oldState)
+			return {
+				enabled = not oldState.enabled,
+			}
+		end)
+	end
 end
 
 function MainController:render()
@@ -41,6 +51,18 @@ function MainController:render()
 			ShouldRestore = true,
 			OnWidgetRestored = self.setEnabled,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		}),
+
+		Toolbar = Roact.createElement(PluginToolbar, {
+			Title = "Roact Visualizer",
+			RenderButtons = function(toolbar)
+				return Roact.createElement(PluginButton, {
+					Title = "Roact Visualizer",
+					Toolbar = toolbar,
+					OnClick = self.toggle,
+					Active = enabled,
+				})
+			end,
 		}),
 	})
 end

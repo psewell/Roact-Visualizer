@@ -66,12 +66,16 @@ function PluginWidget:createWidget()
 	widget.ZIndexBehavior = props.ZIndexBehavior
 	widget:BindToClose(props.OnClose)
 
-	if widget:IsA("DockWidgetPluginGui") and props.OnWidgetRestored then
-		widget:GetPropertyChangedSignal("HostWidgetWasRestored"):Connect(function()
-			task.defer(function()
-				props.OnWidgetRestored(widget.Enabled)
+	if props.OnWidgetRestored then
+		if widget.HostWidgetWasRestored then
+			props.OnWidgetRestored(widget.Enabled)
+		else
+			widget:GetPropertyChangedSignal("HostWidgetWasRestored"):Connect(function()
+				task.defer(function()
+					props.OnWidgetRestored(widget.Enabled)
+				end)
 			end)
-		end)
+		end
 	end
 
 	self.widget = widget
