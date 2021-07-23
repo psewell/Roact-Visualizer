@@ -1,12 +1,19 @@
+local GUID = [[564A1C48%-74D3%-4521%-8083%-CC9757532BCF]]
+
 local scriptPlate = [[
-local script = getfenv().script local require = getfenv().require %s
+--564A1C48-74D3-4521-8083-CC9757532BCF%s
+--%s
+local script = getfenv().script
+local require = getfenv().require
+%s
 ]]
 
 local DynamicRequire
 local modules = {}
 
 local function dynamicRequire(module, overrideRequire)
-	local newSource = string.format(scriptPlate, module.Source)
+	local newSource = string.format(scriptPlate, module:GetFullName(),
+		module:GetDebugId(), module.Source)
 	local func = loadstring(newSource)
 	local env = getfenv(func)
 	env.script = module
@@ -39,6 +46,7 @@ local function dynamicRequireImpl(module, parentId)
 	local id = module:GetDebugId()
 	if modules[id] == nil then
 		modules[id] = {
+			Module = module,
 			IsDirty = true,
 			Dependencies = {},
 		}
@@ -77,6 +85,48 @@ local function reqWithCacheResult(module)
 	return result, didCache
 end
 
+local function getErrorTraceback(err, traceback)
+	local items = string.split(traceback, "\n")
+	local scriptName = string.sub(items[2], 39)
+	local debugId = string.sub(items[3], 3)
+	local lineNumber
+	for index = 1, #items do
+		local item = items[index]
+		if (string.find(item, "Src.Util.DynamicRequire"))
+			and string.find(item, "function dynamicRequire") then
+			local lineNumberItem = items[index - 1]
+			lineNumber = string.match(lineNumberItem, ".*%f[%d.](%d*%.?%d+)")
+			lineNumber = tonumber(lineNumber) - 4
+			break
+		end
+	end
+	if lineNumber == nil then
+		local seenId = false
+		for index = 1, #items do
+			local item = items[index]
+			if (string.find(item, GUID)) then
+				if seenId then
+					local lineNumberItem = items[index - 1]
+					lineNumber = string.match(lineNumberItem, ".*%f[%d.](%d*%.?%d+)")
+					lineNumber = tonumber(lineNumber) - 4
+					break
+				else
+					seenId = true
+				end
+			end
+		end
+	end
+	local module
+	if modules[debugId] and modules[debugId].Module
+		and modules[debugId].Module.Parent ~= nil then
+		module = modules[debugId].Module
+	end
+	return string.format("%s:%i: %s", scriptName, lineNumber, err), module and {
+		Script = module,
+		LineNumber = lineNumber,
+	} or nil
+end
+
 local function clear()
 	modules = {}
 	DynamicRequire.___modules_TEST_ONLY = modules
@@ -85,6 +135,7 @@ end
 DynamicRequire = {
 	Require = req,
 	RequireWithCacheResult = reqWithCacheResult,
+	GetErrorTraceback = getErrorTraceback,
 	Clear = clear,
 	___modules_TEST_ONLY = modules,
 }

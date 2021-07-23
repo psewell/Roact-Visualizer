@@ -11,6 +11,7 @@ local t = require(main.Packages.t)
 local typecheck = t.interface({
 	Text = t.string,
 	Time = t.number,
+	Buttons = t.optional(t.table),
 })
 
 local function create(props)
@@ -23,6 +24,7 @@ local function reduce(state, action)
 		Text = action.Text,
 		Time = action.Time,
 		MessageCode = generateId(),
+		Buttons = action.Buttons or Cryo.None,
 	})
 end
 

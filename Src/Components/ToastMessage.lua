@@ -1,6 +1,5 @@
 --[[
-	Main screen for Roact-Visualizer.
-	Consists of the toolbar, the view, and any modals.
+	Toast message handler.
 ]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
@@ -49,9 +48,10 @@ function ToastMessage:render()
 				VerticalAlignment = Enum.VerticalAlignment.Bottom,
 				Text = props.Text,
 				Visible = showMessage,
+				Buttons = props.Buttons,
 			}),
 
-			[props.MessageCode] = showMessage and Roact.createElement(Timer, {
+			[props.MessageCode] = showMessage and props.Time > 0 and Roact.createElement(Timer, {
 				Time = props.Time,
 				Callback = self.hide,
 			}),
@@ -65,6 +65,7 @@ ToastMessage = RoactRodux.connect(function(state)
 	return {
 		Text = state.Message.Text,
 		Time = state.Message.Time,
+		Buttons = state.Message.Buttons,
 		MessageCode = state.Message.MessageCode,
 	}
 end)(ToastMessage)

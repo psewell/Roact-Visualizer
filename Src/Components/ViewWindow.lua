@@ -7,6 +7,8 @@ local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local DynamicRequire = require(main.Src.Util.DynamicRequire)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
+local ComponentErrorReporter = require(main.Src.Util.ComponentErrorReporter)
+local PluginContext = require(main.Src.Contexts.PluginContext)
 local getColor = require(main.Src.Util.getColor)
 
 local ViewWindow = Roact.PureComponent:extend("ViewWindow")
@@ -49,15 +51,29 @@ function ViewWindow:didUpdate(lastProps, lastState)
 				local rootModule = props.RootModule
 				local didCache
 				name = rootModule:GetDebugId()
-				local success, err = pcall(function()
+				local success, traceback, scriptInfo
+				xpcall(function()
 					component, didCache = DynamicRequire.RequireWithCacheResult(rootModule)
+					success = true
+				end, function(err)
+					traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
+					ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Load:\n\t%s", traceback))
+					success = false
 				end)
 				if component == nil or not success then
 					component = nil
-					warn(string.format("Roact-Visualizer:%s: %s", rootModule:GetFullName(), err))
 					props.SetMessage({
-						Text = "⚠️ Component encountered an error.\nCheck the Output window for details.",
-						Time = 10,
+						Text = "❗ Component encountered an error during load. Check the Output window for details.",
+						Time = -1,
+						Buttons = scriptInfo and {
+							{
+								Text = "Go To Error",
+								OnActivated = function()
+									local plugin = PluginContext:get(self)
+									plugin:OpenScript(scriptInfo.Script, scriptInfo.LineNumber)
+								end,
+							}
+						} or nil,
 					})
 				elseif props.RootModule ~= lastProps.RootModule then
 					props.SetMessage({
@@ -83,18 +99,32 @@ function ViewWindow:didUpdate(lastProps, lastState)
 				}, {
 					[name] = component and self.ThirdPartyRoact.createElement(component) or nil,
 				})
-				local success, err = pcall(function()
+				local success, traceback, scriptInfo
+				xpcall(function()
 					if self.handle then
 						self.handle = self.ThirdPartyRoact.update(self.handle, tree)
 					else
 						self.handle = self.ThirdPartyRoact.mount(tree)
 					end
+					success = true
+				end, function(err)
+					traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
+					ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Render:\n\t%s", traceback))
+					success = false
 				end)
 				if not success then
-					warn(string.format("Roact-Visualizer:%s: %s", props.RootModule:GetFullName(), err))
 					props.SetMessage({
-						Text = "❗ Component encountered an error.\nCheck the Output window for details.",
-						Time = 10,
+						Text = "❗ Component encountered an error during render. Check the Output window for details.",
+						Time = -1,
+						Buttons = scriptInfo and {
+							{
+								Text = "Go To Error",
+								OnActivated = function()
+									local plugin = PluginContext:get(self)
+									plugin:OpenScript(scriptInfo.Script, scriptInfo.LineNumber)
+								end,
+							}
+						} or nil,
 					})
 				end
 			elseif self.handle then

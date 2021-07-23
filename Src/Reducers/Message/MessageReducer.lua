@@ -5,6 +5,7 @@ local Actions = script.Parent.Actions
 local initialState = {
 	Text = nil,
 	Time = nil,
+	Buttons = nil,
 	MessageCode = nil,
 }
 
