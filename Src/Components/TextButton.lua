@@ -7,6 +7,7 @@ local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local GetTextSize = require(main.Packages.GetTextSize)
 local getColor = require(main.Src.Util.getColor)
+local Tooltip = require(main.Src.Components.Tooltip)
 
 local TextButton = Roact.PureComponent:extend("TextButton")
 local t = require(main.Packages.t)
@@ -17,6 +18,7 @@ local typecheck = t.interface({
 	Default = t.optional(t.boolean),
 	LayoutOrder = t.optional(t.integer),
 	ImageOffset = t.optional(t.Vector2),
+	Tooltip = t.optional(t.string),
 })
 
 TextButton.defaultProps = {
@@ -34,6 +36,7 @@ function TextButton:render()
 	local props = self.props
 	local theme = props.Theme
 	local default = props.Default
+	local tooltip = props.Tooltip
 
 	local textSize = GetTextSize({
 		Font = Enum.Font.SourceSans,
@@ -42,7 +45,7 @@ function TextButton:render()
 	})
 
 	local icon = props.Icon
-	local width = textSize.X + 12
+	local width = props.Text ~= "" and textSize.X + 12 or 6
 	if icon then
 		width = width + 20
 	end
@@ -75,9 +78,16 @@ function TextButton:render()
 			BackgroundTransparency = 1,
 			Image = icon,
 			Size = UDim2.fromOffset(18, 18),
-			Position = UDim2.new(0, 3 + props.ImageOffset.X, 0.5, props.ImageOffset.Y),
-			AnchorPoint = Vector2.new(1, 0.5),
+			Position = props.Text ~= "" and UDim2.new(0, 3 + props.ImageOffset.X, 0.5, props.ImageOffset.Y)
+				or UDim2.new(0.5, props.ImageOffset.X, 0.5, props.ImageOffset.Y),
+			AnchorPoint = props.Text ~= "" and Vector2.new(0.5, 0.5)
+				or Vector2.new(0.5, 0.5),
 		}),
+
+		Tooltip = tooltip and Roact.createElement(Tooltip, {
+			Text = tooltip,
+			Icon = icon,
+		})
 	})
 end
 

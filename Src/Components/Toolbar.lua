@@ -2,6 +2,11 @@
 	Toolbar controls at the top of the visualizer.
 ]]
 
+local tooltips = {
+	Select = [[Select a Component's ModuleScript for previewing]],
+	Reload = [[Reload the current Component to reflect the latest changes to its script]],
+}
+
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
@@ -11,8 +16,17 @@ local TextButton = require(main.Src.Components.TextButton)
 local getColor = require(main.Src.Util.getColor)
 
 local Toolbar = Roact.PureComponent:extend("Toolbar")
+local t = require(main.Packages.t)
+local typecheck = t.interface({
+	Minified = t.optional(t.boolean),
+})
 
-function Toolbar:init()
+Toolbar.defaultProps = {
+	Minified = true,
+}
+
+function Toolbar:init(props)
+	assert(typecheck(props))
 	self.targetRef = Roact.createRef()
 	self.handle = nil
 
@@ -30,6 +44,8 @@ end
 function Toolbar:render()
 	local props = self.props
 	local theme = props.Theme
+	local minified = props.Minified
+	local selecting = props.SelectingModule
 
 	return Roact.createElement("Frame", {
 		ZIndex = 3,
@@ -58,17 +74,19 @@ function Toolbar:render()
 
 		SelectButton = Roact.createElement(TextButton, {
 			LayoutOrder = 1,
-			Text = "Select",
+			Text = minified and "" or "Select",
 			Icon = "rbxassetid://2254538897",
 			ImageOffset = Vector2.new(0, 2),
+			Tooltip = not selecting and tooltips.Select or nil,
 			OnActivated = props.StartSelecting,
 		}),
 
 		RefreshButton = Roact.createElement(TextButton, {
 			LayoutOrder = 2,
-			Text = "Reload",
+			Text = minified and "" or "Reload",
 			Icon = "rbxassetid://69395121",
 			ImageOffset = Vector2.new(0, 1),
+			Tooltip = not selecting and tooltips.Reload or nil,
 			OnActivated = props.Reload,
 		}),
 	})

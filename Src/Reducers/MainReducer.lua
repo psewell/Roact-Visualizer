@@ -8,4 +8,5 @@ local Reducers = main.Src.Reducers
 
 return Rodux.combineReducers({
 	PluginState = require(Reducers.PluginState.PluginStateReducer),
+	Message = require(Reducers.Message.MessageReducer),
 })

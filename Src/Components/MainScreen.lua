@@ -9,6 +9,7 @@ local MainBackground = require(main.Src.Components.MainBackground)
 local Toolbar = require(main.Src.Components.Toolbar)
 local ViewWindow = require(main.Src.Components.ViewWindow)
 local ModuleSelector = require(main.Src.Components.ModuleSelector)
+local ToastMessage = require(main.Src.Components.ToastMessage)
 
 local MainScreen = Roact.PureComponent:extend("MainScreen")
 
@@ -18,6 +19,7 @@ function MainScreen:render()
 		Toolbar = Roact.createElement(Toolbar),
 		ViewWindow = Roact.createElement(ViewWindow),
 		ModuleSelector = Roact.createElement(ModuleSelector),
+		ToastMessage = Roact.createElement(ToastMessage),
 	})
 end
 

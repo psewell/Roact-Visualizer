@@ -58,18 +58,23 @@ local function dynamicRequireImpl(module, parentId)
 		end)
 		modules[id].Cached = result
 		modules[id].IsDirty = false
-		return result
+		return result, false
 	else
 		-- Module hasn't changed. If none of its dependencies have changed,
 		-- we need to return the cached version of this module.
 		-- This will prevent things like Roact from invalidating the cache.
-		return modules[id].Cached
+		return modules[id].Cached, true
 	end
 end
 
 local function req(module)
 	local result = (dynamicRequireImpl(module, nil))
 	return result
+end
+
+local function reqWithCacheResult(module)
+	local result, didCache = dynamicRequireImpl(module, nil)
+	return result, didCache
 end
 
 local function clear()
@@ -79,6 +84,7 @@ end
 
 DynamicRequire = {
 	Require = req,
+	RequireWithCacheResult = reqWithCacheResult,
 	Clear = clear,
 	___modules_TEST_ONLY = modules,
 }
