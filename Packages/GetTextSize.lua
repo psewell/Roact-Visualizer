@@ -4,8 +4,6 @@
 ]]
 
 local TextService = game:GetService("TextService")
-local GetBestScale = require(game.ReplicatedStorage.Packages.GetBestScale)
-local GetBestScale = require(game.ReplicatedStorage.Packages.GetBestScale)
 
 local t = require(script.Parent.t)
 local typecheck = t.strictInterface({
@@ -13,8 +11,6 @@ local typecheck = t.strictInterface({
 	Font = t.enum(Enum.Font),
 	TextSize = t.number,
 	MaxWidth = t.optional(t.number),
-	WidthScaled = t.optional(t.boolean),
-	Scaled = t.optional(t.boolean),
 })
 
 return function(props)
@@ -27,11 +23,5 @@ return function(props)
 		props.Font,
 		frameSize
 	)
-	if props.WidthScaled then
-		return size * GetBestScale()
-	elseif props.Scaled then
-		return size * GetBestScale()
-	else
-		return size
-	end
+	return size
 end

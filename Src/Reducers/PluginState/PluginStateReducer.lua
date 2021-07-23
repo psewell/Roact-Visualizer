@@ -4,6 +4,7 @@ local Rodux = require(main.Packages.Rodux)
 local Actions = script.Parent.Actions
 local initialState = {
 	RootModule = nil,
+	SelectingModule = false,
 	Theme = settings().Studio.Theme,
 	ThemeConnection = nil,
 	RoactInstall = nil,
