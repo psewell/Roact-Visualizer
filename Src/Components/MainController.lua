@@ -7,16 +7,30 @@ local tooltip = [[Rapidly visualize and prototype Roact components and trees.]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
+local Rodux = require(main.Packages.Rodux)
+local RoactRodux = require(main.Packages.RoactRodux)
 local PluginWidget = require(main.Src.Components.Base.PluginWidget)
 local PluginToolbar = require(main.Src.Components.Base.PluginToolbar)
 local PluginButton = require(main.Src.Components.Base.PluginButton)
 local MainScreen = require(main.Src.Components.MainScreen)
+local MainReducer = require(main.Src.Reducers.MainReducer)
+local Initialize = require(main.Src.Reducers.Initialize)
+local Teardown = require(main.Src.Reducers.Teardown)
+local PluginContext = require(main.Src.Contexts.PluginContext)
 
 local MainController = Roact.PureComponent:extend("MainController")
+
+local function createMiddlewares()
+	local middlewares = {
+		Rodux.thunkMiddleware,
+	}
+	return middlewares
+end
 
 function MainController:init()
 	self.state = {
 		enabled = false,
+		store = nil,
 	}
 
 	self.setEnabled = function(newEnabled)
@@ -40,9 +54,42 @@ function MainController:init()
 	end
 end
 
+function MainController:createStore()
+	local middlewares = createMiddlewares()
+	local store = Rodux.Store.new(MainReducer, nil, middlewares)
+	local plugin = PluginContext:get(self)
+	store:dispatch(Initialize(plugin))
+	self:setState({
+		store = store,
+	})
+end
+
+function MainController:destroyStore()
+	local store = self.state.store
+	local plugin = PluginContext:get(self)
+	store:dispatch(Teardown(plugin))
+	store:flush()
+	store:destruct()
+	if not self.unmounted then
+		self:setState({
+			store = Roact.None,
+		})
+	end
+end
+
+function MainController:didUpdate()
+	local state = self.state
+	if state.enabled and state.store == nil then
+		self:createStore()
+	elseif state.store and not state.enabled then
+		self:destroyStore()
+	end
+end
+
 function MainController:render()
 	local state = self.state
 	local enabled = state.enabled
+	local store = state.store
 
 	return Roact.createFragment({
 		Widget = Roact.createElement(PluginWidget, {
@@ -56,7 +103,11 @@ function MainController:render()
 			OnWidgetRestored = self.setEnabled,
 			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		}, {
-			MainScreen = Roact.createElement(MainScreen),
+			MainStore = enabled and store and Roact.createElement(RoactRodux.StoreProvider, {
+				store = store,
+			}, {
+				MainScreen = Roact.createElement(MainScreen),
+			}),
 		}),
 
 		Toolbar = Roact.createElement(PluginToolbar, {
@@ -73,6 +124,14 @@ function MainController:render()
 			end,
 		}),
 	})
+end
+
+function MainController:willUnmount()
+	local store = self.state.store
+	if store then
+		self.unmounted = true
+		self:destroyStore()
+	end
 end
 
 return MainController

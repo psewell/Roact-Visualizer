@@ -1,5 +1,6 @@
 --[[
-	A message which appears in the center of the screen.
+	A message which pops up.
+	Optionally can have buttons and an icon.
 ]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
@@ -7,16 +8,34 @@ local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local GetTextSize = require(main.Packages.GetTextSize)
 local GroupTweenJob = require(main.Src.Components.Base.GroupTweenJob)
+local TextButton = require(main.Src.Components.TextButton)
 local getColor = require(main.Src.Util.getColor)
 
 local Message = Roact.PureComponent:extend("Message")
 local t = require(main.Packages.t)
 local typecheck = t.interface({
-	Header = t.optional(t.string),
 	Icon = t.optional(t.string),
 	Text = t.string,
 	Visible = t.boolean,
+	Buttons = t.optional(t.table),
+	VerticalAlignment = t.optional(t.enum(Enum.VerticalAlignment)),
+	TextXAlignment = t.optional(t.enum(Enum.TextXAlignment)),
 })
+
+Message.defaultProps = {
+	VerticalAlignment = Enum.VerticalAlignment.Center,
+	TextXAlignment = Enum.TextXAlignment.Center,
+}
+
+local positions = {
+	[Enum.VerticalAlignment.Center] = UDim2.fromScale(0.5, 0.5),
+	[Enum.VerticalAlignment.Bottom] = UDim2.new(0.5, 0, 1, -20),
+}
+
+local anchorPoints = {
+	[Enum.VerticalAlignment.Center] = Vector2.new(0.5, 0.5),
+	[Enum.VerticalAlignment.Bottom] = Vector2.new(0.5, 1),
+}
 
 function Message:init(props)
 	assert(typecheck(props))
@@ -26,6 +45,7 @@ function Message:render()
 	local props = self.props
 	local theme = props.Theme
 	local icon = props.Icon
+	local buttons = props.Buttons
 
 	local textSize = GetTextSize({
 		Font = Enum.Font.SourceSansSemibold,
@@ -33,6 +53,15 @@ function Message:render()
 		TextSize = 18,
 		MaxWidth = 320,
 	})
+
+	local height = textSize.Y + 16
+	local buttonComponents = {}
+	if buttons then
+		height = height + 26 + 8
+		for i, button in ipairs(buttons) do
+			buttonComponents[i] = Roact.createElement(TextButton, button)
+		end
+	end
 
 	return Roact.createElement(GroupTweenJob, {
 		ZIndex = 10,
@@ -42,9 +71,9 @@ function Message:render()
 		Offset = UDim2.fromOffset(0, 20),
 	}, {
 		Background = Roact.createElement("Frame", {
-			Size = UDim2.fromOffset(textSize.X + 16, textSize.Y + 16),
-			Position = UDim2.fromScale(0.5, 0.5),
-			AnchorPoint = Vector2.new(0.5, 0.5),
+			Size = UDim2.fromOffset(textSize.X + 16, height),
+			Position = positions[props.VerticalAlignment],
+			AnchorPoint = anchorPoints[props.VerticalAlignment],
 			BackgroundColor3 = getColor(function(c)
 				return theme:GetColor(c.MainBackground)
 			end),
@@ -62,10 +91,10 @@ function Message:render()
 			}),
 
 			Text = Roact.createElement("TextLabel", {
-				TextXAlignment = Enum.TextXAlignment.Left,
+				TextXAlignment = props.TextXAlignment,
 				Size = UDim2.fromOffset(textSize.X, textSize.Y),
-				Position = UDim2.fromScale(0.5, 0.5),
-				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0),
+				AnchorPoint = Vector2.new(0.5, 0),
 				Font = Enum.Font.SourceSansSemibold,
 				TextSize = 18,
 				Text = props.Text,
@@ -82,6 +111,22 @@ function Message:render()
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromOffset(-8, -8),
 				BackgroundTransparency = 1,
+			}),
+
+			ButtonBar = buttons and Roact.createElement("Frame", {
+				Size = UDim2.new(1, 0, 0, 26),
+				Position = UDim2.fromScale(0, 1),
+				AnchorPoint = Vector2.new(0, 1),
+				BackgroundTransparency = 1,
+			}, {
+				Layout = Roact.createElement("UIListLayout", {
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					Padding = UDim.new(0, 12),
+				}),
+
+				Buttons = Roact.createFragment(buttonComponents),
 			}),
 		}),
 	})

@@ -2,12 +2,11 @@
 	Toolbar controls at the top of the visualizer.
 ]]
 
-local Selection = game:GetService("Selection")
-
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSelectingModule)
+local TextButton = require(main.Src.Components.TextButton)
 local getColor = require(main.Src.Util.getColor)
 
 local Toolbar = Roact.PureComponent:extend("Toolbar")
@@ -35,7 +34,7 @@ function Toolbar:render()
 		ZIndex = 3,
 		Size = UDim2.new(1, 0, 0, 30),
 		BackgroundColor3 = getColor(function(c)
-			return theme:GetColor(c.MainBackground)
+			return theme:GetColor(c.Titlebar)
 		end),
 		BorderColor3 = getColor(function(c)
 			return theme:GetColor(c.Border)
@@ -45,27 +44,32 @@ function Toolbar:render()
 		Padding = Roact.createElement("UIPadding", {
 			PaddingTop = UDim.new(0, 2),
 			PaddingBottom = UDim.new(0, 2),
-			PaddingLeft = UDim.new(0, 2),
-			PaddingRight = UDim.new(0, 2),
+			PaddingLeft = UDim.new(0, 4),
+			PaddingRight = UDim.new(0, 4),
 		}),
 
-		SelectButton = Roact.createElement("TextButton", {
-			Size = UDim2.fromOffset(50, 26),
-			Font = Enum.Font.SourceSansSemibold,
-			TextSize = 18,
+		Layout = Roact.createElement("UIListLayout", {
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Left,
+			Padding = UDim.new(0, 4),
+		}),
+
+		SelectButton = Roact.createElement(TextButton, {
+			LayoutOrder = 1,
 			Text = "Select",
-			BackgroundColor3 = getColor(function(c)
-				return theme:GetColor(c.Button)
-			end),
-			TextColor3 = getColor(function(c)
-				return theme:GetColor(c.ButtonText)
-			end),
-			[Roact.Event.Activated] = props.StartSelecting,
-		}, {
-			Corner = Roact.createElement("UICorner", {
-				CornerRadius = UDim.new(0, 4),
-			}),
-		})
+			Icon = "rbxassetid://2254538897",
+			ImageOffset = Vector2.new(0, 2),
+			OnActivated = props.StartSelecting,
+		}),
+
+		RefreshButton = Roact.createElement(TextButton, {
+			LayoutOrder = 2,
+			Text = "Refresh",
+			Icon = "rbxassetid://69395121",
+			ImageOffset = Vector2.new(0, 1),
+			OnActivated = props.StartSelecting,
+		}),
 	})
 end
 
@@ -77,7 +81,6 @@ Toolbar = RoactRodux.connect(function(state)
 end, function(dispatch)
 	return {
 		StartSelecting = function()
-			Selection:Set({})
 			dispatch(SetSelectingModule({
 				SelectingModule = true,
 			}))

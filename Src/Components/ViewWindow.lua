@@ -6,6 +6,7 @@ local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local DynamicRequire = require(main.Src.Util.DynamicRequire)
+local getColor = require(main.Src.Util.getColor)
 
 local ViewWindow = Roact.PureComponent:extend("ViewWindow")
 
@@ -28,6 +29,7 @@ function ViewWindow:render()
 	local state = self.state
 	local target = state.target
 	local props = self.props
+	local theme = props.Theme
 
 	local ThirdPartyRoact = DynamicRequire.Require(props.RoactInstall)
 
@@ -35,7 +37,7 @@ function ViewWindow:render()
 		local name, component
 		if props.RootModule then
 			local rootModule = props.RootModule
-			name = rootModule.Name
+			name = rootModule:GetDebugId()
 			component = DynamicRequire.Require(rootModule)
 		end
 
@@ -46,7 +48,7 @@ function ViewWindow:render()
 				[name] = component and ThirdPartyRoact.createElement(component) or nil,
 			})
 			if self.handle then
-				self.handle = ThirdPartyRoact.update(tree)
+				self.handle = ThirdPartyRoact.update(self.handle, tree)
 			else
 				self.handle = ThirdPartyRoact.mount(tree)
 			end
@@ -59,10 +61,13 @@ function ViewWindow:render()
 	return Roact.createFragment({
 		Target = Roact.createElement("Frame", {
 			ZIndex = 2,
-			BackgroundTransparency = 1,
+			BackgroundColor3 = getColor(function(c)
+				return theme:GetColor(c.Midlight)
+			end),
+			BorderSizePixel = 0,
 			ClipsDescendants = true,
-			Size = UDim2.new(1, 0, 1, -30),
-			Position = UDim2.fromScale(0, 1),
+			Size = UDim2.new(1, -8, 1, -38),
+			Position = UDim2.new(0, 4, 1, -4),
 			AnchorPoint = Vector2.new(0, 1),
 			[Roact.Ref] = self.targetRef,
 		}),
@@ -82,6 +87,7 @@ ViewWindow = RoactRodux.connect(function(state)
 	return {
 		RootModule = state.PluginState.RootModule,
 		RoactInstall = state.PluginState.RoactInstall,
+		Theme = state.PluginState.Theme,
 	}
 end)(ViewWindow)
 

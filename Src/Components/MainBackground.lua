@@ -17,7 +17,7 @@ function MainBackground:render()
 		Size = UDim2.fromScale(1, 1),
 		BorderSizePixel = 0,
 		BackgroundColor3 = getColor(function(c)
-			return theme:GetColor(c.ViewPortBackground)
+			return theme:GetColor(c.MainBackground)
 		end),
 	})
 end

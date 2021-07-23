@@ -2,7 +2,7 @@
 	Used to select a RootModule.
 ]]
 
-local selectMessage = [[Drag a Roact Component's ModuleScript here from the Explorer to visualize it!]]
+local selectMessage = [[Drag or Select a Module]]
 
 local Selection = game:GetService("Selection")
 
@@ -23,7 +23,16 @@ function ModuleSelector:init()
 	self.state = {
 		pluginGui = nil,
 		dragObject = nil,
+		selectedObject = nil,
 	}
+
+	self.setModule = function()
+		local items = Selection:Get()
+		local item = items[1]
+		self.props.SetRootModule(item)
+		Selection:Set({})
+		self.props.StopSelecting()
+	end
 
 	self.onDragDropped = function(dragData)
 		if dragData.Sender == "Explorer" then
@@ -31,11 +40,11 @@ function ModuleSelector:init()
 			if items[1] and items[1]:IsA("ModuleScript") and #items == 1 then
 				local item = items[1]
 				if item.Name == dragData.Data then
-					self.props.SetRootModule(item)
-					Selection:Set({})
+					self.setModule()
 				end
+			else
+				self.props.StopSelecting()
 			end
-			self.props.StopSelecting()
 		end
 	end
 
@@ -64,17 +73,22 @@ function ModuleSelector:init()
 	self.onSelectionChanged = function()
 		local items = Selection:Get()
 		if items[1] and items[1]:IsA("ModuleScript") and #items == 1 then
+			self:setState({
+				selectedObject = items[1],
+			})
 			local plugin = PluginContext:get(self)
 			plugin:StartDrag({
 				Sender = "Explorer",
 				MimeType = "text/plain",
 				Data = items[1].Name,
 				MouseIcon = "",
-				DragIcon = "rbxassetid://413367412",
+				DragIcon = "rbxassetid://2254538897",
 				HotSpot = Vector2.new(-20, -20),
 			})
 		else
-			self.props.StopSelecting()
+			self:setState({
+				selectedObject = Roact.None,
+			})
 		end
 	end
 end
@@ -90,7 +104,9 @@ function ModuleSelector:didUpdate(lastProps)
 	if self.props.SelectingModule and not lastProps.SelectingModule then
 		self:setState({
 			dragObject = Roact.None,
+			selectedObject = Roact.None,
 		})
+		self.onSelectionChanged()
 	end
 end
 
@@ -98,6 +114,7 @@ function ModuleSelector:render()
 	local state = self.state
 	local pluginGui = state.pluginGui
 	local dragObject = state.dragObject
+	local selectedObject = state.selectedObject
 	local props = self.props
 	local selecting = props.SelectingModule
 
@@ -141,17 +158,28 @@ function ModuleSelector:render()
 			}),
 		}),
 
-		SelectingMessage = not dragObject and Roact.createElement(Message, {
+		SelectingMessage = not dragObject and not selectedObject and Roact.createElement(Message, {
 			Visible = selecting,
-			TweenIn = true,
 			Text = selectMessage,
 		}),
 
 		DragObjectMessage = dragObject and Roact.createElement(Message, {
 			Visible = selecting,
-			TweenIn = true,
-			Text = dragObject and dragObject:GetFullName() or "",
+			Text = dragObject and string.format("%s\nDrop to Select", dragObject:GetFullName()) or "",
 			Icon = "rbxassetid://2254538897",
+		}),
+
+		ValidSelectToast = selectedObject and not dragObject and Roact.createElement(Message, {
+			Visible = selecting,
+			Text = selectedObject and selectedObject:GetFullName() or "",
+			Icon = "rbxassetid://2254538897",
+			Buttons = {
+				{
+					Text = "Select",
+					Default = true,
+					OnActivated = self.setModule,
+				},
+			}
 		}),
 	})
 end
