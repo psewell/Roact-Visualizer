@@ -159,17 +159,20 @@ function ModuleSelector:render()
 		}),
 
 		SelectingMessage = not dragObject and not selectedObject and Roact.createElement(Message, {
+			ZIndex = 5,
 			Visible = selecting,
 			Text = selectMessage,
 		}),
 
 		DragObjectMessage = dragObject and Roact.createElement(Message, {
+			ZIndex = 5,
 			Visible = selecting,
 			Text = dragObject and string.format("%s\nDrop to Select", dragObject:GetFullName()) or "",
 			Icon = "rbxassetid://2254538897",
 		}),
 
 		ValidSelectToast = selectedObject and not dragObject and Roact.createElement(Message, {
+			ZIndex = 5,
 			Visible = selecting,
 			Text = selectedObject and selectedObject:GetFullName() or "",
 			Icon = "rbxassetid://2254538897",

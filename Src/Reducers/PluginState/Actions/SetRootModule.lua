@@ -8,7 +8,7 @@ local Cryo = require(main.Packages.Cryo)
 local t = require(main.Packages.t)
 
 local typecheck = t.interface({
-	RootModule = t.instanceIsA("ModuleScript"),
+	RootModule = t.optional(t.instanceIsA("ModuleScript")),
 })
 
 local function create(props)
@@ -18,7 +18,7 @@ end
 
 local function reduce(state, action)
 	return Cryo.Dictionary.join(state, {
-		RootModule = action.RootModule,
+		RootModule = action.RootModule or Cryo.None,
 	})
 end
 

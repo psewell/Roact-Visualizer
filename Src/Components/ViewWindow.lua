@@ -7,6 +7,7 @@ local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local DynamicRequire = require(main.Src.Util.DynamicRequire)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
+local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
 local ComponentErrorReporter = require(main.Src.Util.ComponentErrorReporter)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local getColor = require(main.Src.Util.getColor)
@@ -21,6 +22,16 @@ function ViewWindow:init()
 	self.state = {
 		target = nil,
 	}
+
+	self.closeModule = function()
+		if self.props.RootModule then
+			self.props.CloseModule()
+			self.props.SetMessage({
+				Text = "Component closed.",
+				Time = 2,
+			})
+		end
+	end
 end
 
 function ViewWindow:didMount()
@@ -60,6 +71,9 @@ function ViewWindow:didUpdate(lastProps, lastState)
 					ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Load:\n\t%s", traceback))
 					success = false
 				end)
+
+				local isValid = typeof(component) == "function" or component.render ~= nil
+
 				if component == nil or not success then
 					component = nil
 					props.SetMessage({
@@ -72,9 +86,20 @@ function ViewWindow:didUpdate(lastProps, lastState)
 									local plugin = PluginContext:get(self)
 									plugin:OpenScript(scriptInfo.Script, scriptInfo.LineNumber)
 								end,
-							}
+							},
+							{
+								Text = "Close",
+								OnActivated = self.closeModule,
+							},
 						} or nil,
 					})
+				elseif not isValid then
+					props.SetMessage({
+						Text = "❗ This module is not a Roact component.",
+						Time = 10,
+					})
+					props.CloseModule()
+					return
 				elseif props.RootModule ~= lastProps.RootModule then
 					props.SetMessage({
 						Text = "Component successfully loaded.",
@@ -123,7 +148,11 @@ function ViewWindow:didUpdate(lastProps, lastState)
 									local plugin = PluginContext:get(self)
 									plugin:OpenScript(scriptInfo.Script, scriptInfo.LineNumber)
 								end,
-							}
+							},
+							{
+								Text = "Close",
+								OnActivated = self.closeModule,
+							},
 						} or nil,
 					})
 				end
@@ -146,8 +175,8 @@ function ViewWindow:render()
 		end),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		Size = UDim2.new(1, -8, 1, -38),
-		Position = UDim2.new(0, 4, 1, -4),
+		Size = UDim2.new(1, -8, 1, -68),
+		Position = UDim2.new(0, 4, 1, -34),
 		AnchorPoint = Vector2.new(0, 1),
 		[Roact.Ref] = self.targetRef,
 	})
@@ -171,6 +200,12 @@ ViewWindow = RoactRodux.connect(function(state)
 	}
 end, function(dispatch)
 	return {
+		CloseModule = function()
+			dispatch(SetRootModule({
+				RootModule = nil,
+			}))
+		end,
+
 		SetMessage = function(message)
 			dispatch(SetMessage(message))
 		end,

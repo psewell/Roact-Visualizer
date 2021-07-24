@@ -20,11 +20,13 @@ local typecheck = t.interface({
 	Buttons = t.optional(t.table),
 	VerticalAlignment = t.optional(t.enum(Enum.VerticalAlignment)),
 	TextXAlignment = t.optional(t.enum(Enum.TextXAlignment)),
+	ZIndex = t.optional(t.integer),
 })
 
 Message.defaultProps = {
 	VerticalAlignment = Enum.VerticalAlignment.Center,
 	TextXAlignment = Enum.TextXAlignment.Center,
+	ZIndex = 3,
 }
 
 local positions = {
@@ -64,7 +66,7 @@ function Message:render()
 	end
 
 	return Roact.createElement(GroupTweenJob, {
-		ZIndex = 10,
+		ZIndex = props.ZIndex,
 		Visible = props.Visible,
 		TweenIn = true,
 		Time = 0.3,
@@ -123,7 +125,7 @@ function Message:render()
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					FillDirection = Enum.FillDirection.Horizontal,
 					HorizontalAlignment = Enum.HorizontalAlignment.Center,
-					Padding = UDim.new(0, 12),
+					Padding = UDim.new(0, 8),
 				}),
 
 				Buttons = Roact.createFragment(buttonComponents),

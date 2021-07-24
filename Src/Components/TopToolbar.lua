@@ -3,29 +3,27 @@
 ]]
 
 local tooltips = {
-	Select = [[Select a Component's ModuleScript for previewing]],
 	Reload = [[Reload the current Component to reflect the latest changes to its script]],
 }
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
-local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSelectingModule)
 local Reload = require(main.Src.Reducers.PluginState.Actions.Reload)
 local TextButton = require(main.Src.Components.TextButton)
 local getColor = require(main.Src.Util.getColor)
 
-local Toolbar = Roact.PureComponent:extend("Toolbar")
+local TopToolbar = Roact.PureComponent:extend("TopToolbar")
 local t = require(main.Packages.t)
 local typecheck = t.interface({
 	Minified = t.optional(t.boolean),
 })
 
-Toolbar.defaultProps = {
-	Minified = true,
+TopToolbar.defaultProps = {
+	Minified = false,
 }
 
-function Toolbar:init(props)
+function TopToolbar:init(props)
 	assert(typecheck(props))
 	self.targetRef = Roact.createRef()
 	self.handle = nil
@@ -35,13 +33,13 @@ function Toolbar:init(props)
 	}
 end
 
-function Toolbar:didMount()
+function TopToolbar:didMount()
 	self:setState({
 		target = self.targetRef:getValue(),
 	})
 end
 
-function Toolbar:render()
+function TopToolbar:render()
 	local props = self.props
 	local theme = props.Theme
 	local minified = props.Minified
@@ -69,16 +67,8 @@ function Toolbar:render()
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			FillDirection = Enum.FillDirection.Horizontal,
 			HorizontalAlignment = Enum.HorizontalAlignment.Left,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
 			Padding = UDim.new(0, 4),
-		}),
-
-		SelectButton = Roact.createElement(TextButton, {
-			LayoutOrder = 1,
-			Text = minified and "" or "Select",
-			Icon = "rbxassetid://2254538897",
-			ImageOffset = Vector2.new(0, 2),
-			Tooltip = not selecting and tooltips.Select or nil,
-			OnActivated = props.StartSelecting,
 		}),
 
 		RefreshButton = Roact.createElement(TextButton, {
@@ -92,23 +82,17 @@ function Toolbar:render()
 	})
 end
 
-Toolbar = RoactRodux.connect(function(state)
+TopToolbar = RoactRodux.connect(function(state)
 	return {
 		SelectingModule = state.PluginState.SelectingModule,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)
 	return {
-		StartSelecting = function()
-			dispatch(SetSelectingModule({
-				SelectingModule = true,
-			}))
-		end,
-
 		Reload = function()
 			dispatch(Reload({}))
 		end,
 	}
-end)(Toolbar)
+end)(TopToolbar)
 
-return Toolbar
+return TopToolbar
