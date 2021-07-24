@@ -15,6 +15,9 @@ local function dynamicRequire(module, overrideRequire)
 	local newSource = string.format(scriptPlate, module:GetFullName(),
 		module:GetDebugId(), module.Source)
 	local func = loadstring(newSource)
+	if func == nil then
+		return {}
+	end
 	local env = getfenv(func)
 	env.script = module
 	env.require = overrideRequire

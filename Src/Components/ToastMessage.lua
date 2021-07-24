@@ -44,14 +44,14 @@ function ToastMessage:render()
 	local showMessage = state.showMessage
 	if props.MessageCode then
 		return Roact.createFragment({
-			Message = props.Text and Roact.createElement(Message, {
+			[props.MessageCode .. "Message"] = props.Text and Roact.createElement(Message, {
 				VerticalAlignment = Enum.VerticalAlignment.Bottom,
 				Text = props.Text,
 				Visible = showMessage,
 				Buttons = props.Buttons,
 			}),
 
-			[props.MessageCode] = showMessage and props.Time > 0 and Roact.createElement(Timer, {
+			[props.MessageCode .. "Timer"] = showMessage and Roact.createElement(Timer, {
 				Time = props.Time,
 				Callback = self.hide,
 			}),

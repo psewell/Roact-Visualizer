@@ -21,6 +21,9 @@ function Timer:init(props)
 	local endTime = now + props.Time
 
 	self.update = function()
+		if props.Time < 0 then
+			return
+		end
 		if self.active and tick() >= endTime then
 			self.active = false
 			props.Callback()
