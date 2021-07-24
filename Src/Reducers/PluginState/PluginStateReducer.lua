@@ -9,6 +9,7 @@ local initialState = {
 	ThemeConnection = nil,
 	RoactInstall = nil,
 	ReloadCode = "",
+	AlignCenter = true,
 }
 
 local function registerActions()

@@ -169,7 +169,7 @@ function ModuleSelector:render()
 		DragObjectMessage = dragObject and Roact.createElement(Message, {
 			ZIndex = 5,
 			Visible = selecting,
-			Text = dragObject and string.format("%s\nDrop to Select", dragObject:GetFullName()) or "",
+			Text = dragObject and string.format("%s\nDrop to select", dragObject:GetFullName()) or "",
 			Icon = "rbxassetid://2254538897",
 		}),
 

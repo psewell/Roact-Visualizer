@@ -28,7 +28,7 @@ function ViewWindow:init()
 		if self.props.RootModule then
 			self.props.CloseModule()
 			self.props.SetMessage({
-				Text = "Component closed.",
+				Text = "Component unloaded.",
 				Time = 2,
 			})
 		end
@@ -168,6 +168,7 @@ end
 function ViewWindow:render()
 	local props = self.props
 	local theme = props.Theme
+	local center = props.AlignCenter
 
 	return Roact.createElement("Frame", {
 		ZIndex = 2,
@@ -181,9 +182,13 @@ function ViewWindow:render()
 		AnchorPoint = Vector2.new(0, 1),
 		[Roact.Ref] = self.targetRef,
 	}, {
-		SelectWindow = props.RootModule == nil and Roact.createElement(SelectWindow, {
+		SelectWindow = props.RootModule == nil
+			and Roact.createElement(SelectWindow),
 
-		}),
+		Center = props.RootModule and center and Roact.createElement("UIListLayout", {
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+		}) or nil,
 	})
 end
 
@@ -198,6 +203,7 @@ end
 
 ViewWindow = RoactRodux.connect(function(state)
 	return {
+		AlignCenter = state.PluginState.AlignCenter,
 		RootModule = state.PluginState.RootModule,
 		RoactInstall = state.PluginState.RoactInstall,
 		ReloadCode = state.PluginState.ReloadCode,

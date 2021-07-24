@@ -32,8 +32,6 @@ BottomToolbar.defaultProps = {
 function BottomToolbar:init(props)
 	assert(typecheck(props))
 	self.targetRef = Roact.createRef()
-	self.handle = nil
-
 	self.state = {
 		pluginGui = nil,
 		absoluteSize = Vector2.new(),
@@ -49,7 +47,7 @@ function BottomToolbar:init(props)
 		if self.props.RootModule then
 			self.props.CloseModule()
 			self.props.SetMessage({
-				Text = "Component closed.",
+				Text = "Component unloaded.",
 				Time = 2,
 			})
 		end
@@ -99,7 +97,6 @@ function BottomToolbar:render()
 			textWidth = largeSize.X
 			text = rootModule:GetFullName()
 		end
-		--textSize = UDim2.new(1, -104, 1, 0)
 		textSize = UDim2.new(0, textWidth, 1, 0)
 	end
 
@@ -146,29 +143,29 @@ function BottomToolbar:render()
 			OnActivated = props.StartSelecting,
 		}),
 
+		CloseButton = rootModule and Roact.createElement(TextButton, {
+			Text = "",
+			LayoutOrder = 2,
+			Icon = "rbxasset://textures/StudioSharedUI/close.png",
+			ImageSize = UDim2.fromOffset(16, 16),
+			ColorImage = true,
+			Tooltip = not selecting and tooltips.Close or nil,
+			OnActivated = self.closeModule,
+		}),
+
 		CurrentModule = rootModule and Roact.createElement("TextLabel", {
 			Text = text,
 			Size = textSize,
 			Font = Enum.Font.SourceSans,
 			TextSize = 18,
 			TextTruncate = Enum.TextTruncate.AtEnd,
-			LayoutOrder = 2,
+			LayoutOrder = 3,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Center,
 			BackgroundTransparency = 1,
 			TextColor3 = getColor(function(c)
-				return theme:GetColor(c.SubText)
+				return theme:GetColor(c.MainText)
 			end),
-		}),
-
-		CloseButton = rootModule and Roact.createElement(TextButton, {
-			Text = "",
-			LayoutOrder = 3,
-			Icon = "rbxasset://textures/StudioSharedUI/close.png",
-			ImageSize = UDim2.fromOffset(16, 16),
-			ColorImage = true,
-			Tooltip = not selecting and tooltips.Close or nil,
-			OnActivated = self.closeModule,
 		}),
 
 		IgnoreLayout = Roact.createElement("Folder", {}, {
@@ -177,7 +174,7 @@ function BottomToolbar:render()
 				Position = UDim2.fromScale(1, 0),
 				AnchorPoint = Vector2.new(1, 0),
 				Icon = "rbxassetid://7138347364",
-				ImageSize = UDim2.fromOffset(20, 20),
+				ImageSize = UDim2.fromOffset(24, 24),
 				Tooltip = not selecting and tooltips.About or nil,
 				OnActivated = function() end,
 			}),

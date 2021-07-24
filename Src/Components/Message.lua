@@ -9,6 +9,7 @@ local RoactRodux = require(main.Packages.RoactRodux)
 local GetTextSize = require(main.Packages.GetTextSize)
 local GroupTweenJob = require(main.Src.Components.Base.GroupTweenJob)
 local TextButton = require(main.Src.Components.TextButton)
+local Connection = require(main.Src.Components.Signal.Connection)
 local getColor = require(main.Src.Util.getColor)
 
 local Message = Roact.PureComponent:extend("Message")
@@ -41,6 +42,26 @@ local anchorPoints = {
 
 function Message:init(props)
 	assert(typecheck(props))
+	self.targetRef = Roact.createRef()
+	self.state = {
+		pluginGui = nil,
+		absoluteSize = Vector2.new(),
+	}
+
+	self.sizeChanged = function(size)
+		self:setState({
+			absoluteSize = size or self.state.pluginGui.AbsoluteSize
+		})
+	end
+end
+
+function Message:didMount()
+	local target = self.targetRef:getValue()
+	local pluginGui = target:FindFirstAncestorWhichIsA("PluginGui")
+	self:setState({
+		pluginGui = pluginGui,
+	})
+	self.sizeChanged(pluginGui.AbsoluteSize)
 end
 
 function Message:render()
@@ -48,21 +69,33 @@ function Message:render()
 	local theme = props.Theme
 	local icon = props.Icon
 	local buttons = props.Buttons
+	local state = self.state
+	local absoluteSize = state.absoluteSize
+	local pluginGui = state.pluginGui
 
 	local textSize = GetTextSize({
 		Font = Enum.Font.SourceSansSemibold,
 		Text = props.Text,
 		TextSize = 18,
-		MaxWidth = 320,
+		MaxWidth = math.min(320, absoluteSize.X - 16),
 	})
 
 	local height = textSize.Y + 16
+	local width = textSize.X + 16
 	local buttonComponents = {}
 	if buttons then
 		height = height + 26 + 8
 		for i, button in ipairs(buttons) do
 			buttonComponents[i] = Roact.createElement(TextButton, button)
 		end
+	end
+
+	local itemType = buttons and "ImageButton" or "Frame"
+	local autoButtonColor
+	if buttons then
+		autoButtonColor = false
+	else
+		autoButtonColor = nil
 	end
 
 	return Roact.createElement(GroupTweenJob, {
@@ -72,14 +105,22 @@ function Message:render()
 		Time = 0.3,
 		Offset = UDim2.fromOffset(0, 20),
 	}, {
-		Background = Roact.createElement("Frame", {
-			Size = UDim2.fromOffset(textSize.X + 16, height),
+		SizeChanged = pluginGui and Roact.createElement(Connection, {
+			Signal = pluginGui:GetPropertyChangedSignal("AbsoluteSize"),
+			Callback = self.sizeChanged,
+		}),
+
+		[itemType] = Roact.createElement(itemType, {
+			AutoButtonColor = autoButtonColor,
+			ImageTransparency = itemType == "ImageButton" and 1 or nil,
+			Size = UDim2.fromOffset(width, height),
 			Position = positions[props.VerticalAlignment],
 			AnchorPoint = anchorPoints[props.VerticalAlignment],
 			BackgroundColor3 = getColor(function(c)
 				return theme:GetColor(c.MainBackground)
 			end),
 			BorderSizePixel = 0,
+			[Roact.Ref] = self.targetRef,
 		}, {
 			Corner = Roact.createElement("UICorner", {
 				CornerRadius = UDim.new(0, 4),
