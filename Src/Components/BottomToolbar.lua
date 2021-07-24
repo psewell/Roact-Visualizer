@@ -166,6 +166,7 @@ function BottomToolbar:render()
 			LayoutOrder = 3,
 			Icon = "rbxasset://textures/StudioSharedUI/close.png",
 			ImageSize = UDim2.fromOffset(16, 16),
+			ColorImage = true,
 			Tooltip = not selecting and tooltips.Close or nil,
 			OnActivated = self.closeModule,
 		}),

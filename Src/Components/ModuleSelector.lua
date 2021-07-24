@@ -2,7 +2,8 @@
 	Used to select a RootModule.
 ]]
 
-local selectMessage = [[Drag or Select a Module]]
+local selectMessage = [[Select or drag a component's ModuleScript
+from the Explorer]]
 
 local Selection = game:GetService("Selection")
 
@@ -162,6 +163,7 @@ function ModuleSelector:render()
 			ZIndex = 5,
 			Visible = selecting,
 			Text = selectMessage,
+			Icon = "rbxasset://textures/AssetManager/explorer.png",
 		}),
 
 		DragObjectMessage = dragObject and Roact.createElement(Message, {

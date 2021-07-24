@@ -76,6 +76,7 @@ function TopToolbar:render()
 			Text = minified and "" or "Reload",
 			Icon = "rbxassetid://69395121",
 			ImageOffset = Vector2.new(0, 1),
+			ColorImage = true,
 			Tooltip = not selecting and tooltips.Reload or nil,
 			OnActivated = props.Reload,
 		}),

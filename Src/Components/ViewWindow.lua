@@ -10,6 +10,7 @@ local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
 local ComponentErrorReporter = require(main.Src.Util.ComponentErrorReporter)
 local PluginContext = require(main.Src.Contexts.PluginContext)
+local SelectWindow = require(main.Src.Components.SelectWindow)
 local getColor = require(main.Src.Util.getColor)
 
 local ViewWindow = Roact.PureComponent:extend("ViewWindow")
@@ -179,6 +180,10 @@ function ViewWindow:render()
 		Position = UDim2.new(0, 4, 1, -34),
 		AnchorPoint = Vector2.new(0, 1),
 		[Roact.Ref] = self.targetRef,
+	}, {
+		SelectWindow = props.RootModule == nil and Roact.createElement(SelectWindow, {
+
+		}),
 	})
 end
 

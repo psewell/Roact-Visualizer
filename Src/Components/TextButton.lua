@@ -22,6 +22,7 @@ local typecheck = t.interface({
 	Tooltip = t.optional(t.string),
 	Position = t.optional(t.UDim2),
 	AnchorPoint = t.optional(t.Vector2),
+	ColorImage = t.optional(t.boolean),
 })
 
 TextButton.defaultProps = {
@@ -30,6 +31,7 @@ TextButton.defaultProps = {
 	LayoutOrder = 1,
 	ImageOffset = Vector2.new(),
 	ImageSize = UDim2.fromOffset(18, 18),
+	ColorImage = false,
 }
 
 function TextButton:init(props)
@@ -82,6 +84,9 @@ function TextButton:render()
 
 		Icon = icon and Roact.createElement("ImageLabel", {
 			BackgroundTransparency = 1,
+			ImageColor3 = props.ColorImage and getColor(function(c)
+				return theme:GetColor(c.BrightText)
+			end) or Color3.new(1, 1, 1),
 			Image = icon,
 			Size = props.ImageSize,
 			Position = props.Text ~= "" and UDim2.new(0, 3 + props.ImageOffset.X, 0.5, props.ImageOffset.Y)
@@ -93,7 +98,7 @@ function TextButton:render()
 		Tooltip = tooltip and Roact.createElement(Tooltip, {
 			Text = tooltip,
 			Icon = icon,
-		})
+		}),
 	})
 end
 

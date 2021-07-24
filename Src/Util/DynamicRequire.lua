@@ -121,6 +121,7 @@ local function getErrorTraceback(err, traceback)
 		and modules[debugId].Module.Parent ~= nil then
 		module = modules[debugId].Module
 	end
+	err = string.gsub(err, "%[.*%]:%d*: ", "")
 	return string.format("%s:%i: %s", scriptName, lineNumber, err), module and {
 		Script = module,
 		LineNumber = lineNumber,
