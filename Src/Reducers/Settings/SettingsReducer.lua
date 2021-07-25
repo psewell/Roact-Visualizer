@@ -3,8 +3,7 @@ local Rodux = require(main.Packages.Rodux)
 
 local Actions = script.Parent.Actions
 local initialState = {
-	Props = nil,
-	Root = nil,
+	ShowHelp = true,
 }
 
 local function registerActions()

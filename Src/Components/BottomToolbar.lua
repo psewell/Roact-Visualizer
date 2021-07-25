@@ -150,7 +150,6 @@ function BottomToolbar:render()
 			ColorImage = true,
 			Tooltip = not selecting and tooltips.Select or nil,
 			OnActivated = props.StartSelecting,
-			Enabled = rootModule ~= nil,
 		}),
 
 		OpenButton = Roact.createElement(TextButton, {

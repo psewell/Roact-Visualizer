@@ -8,6 +8,7 @@ local tooltips = {
 	Props = [[Edit the props passed to the current component]],
 	Center = [[Alignment: Centered]],
 	Actual = [[Alignment: Actual]],
+	Menu = [[Access settings and additional controls]],
 }
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
@@ -17,6 +18,7 @@ local Reload = require(main.Src.Reducers.PluginState.Actions.Reload)
 local SetAlignCenter = require(main.Src.Reducers.PluginState.Actions.SetAlignCenter)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local TextButton = require(main.Src.Components.TextButton)
+local SettingsMenu = require(main.Src.Components.SettingsMenu)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local getColor = require(main.Src.Util.getColor)
 
@@ -32,6 +34,9 @@ TopToolbar.defaultProps = {
 
 function TopToolbar:init(props)
 	assert(typecheck(props))
+	self.state = {
+		showMenu = false,
+	}
 
 	self.toggleAlignment = function()
 		self.props.SetAlignCenter(not self.props.AlignCenter)
@@ -54,6 +59,18 @@ function TopToolbar:init(props)
 			Time = 2,
 		})
 	end
+
+	self.showMenu = function()
+		self:setState({
+			showMenu = true,
+		})
+	end
+
+	self.hideMenu = function()
+		self:setState({
+			showMenu = false,
+		})
+	end
 end
 
 function TopToolbar:render()
@@ -63,6 +80,8 @@ function TopToolbar:render()
 	local selecting = props.SelectingModule
 	local center = props.AlignCenter
 	local rootModule = props.RootModule
+	local state = self.state
+	local showMenu = state.showMenu
 
 	return Roact.createElement("Frame", {
 		ZIndex = 3,
@@ -80,6 +99,10 @@ function TopToolbar:render()
 			PaddingBottom = UDim.new(0, 2),
 			PaddingLeft = UDim.new(0, 4),
 			PaddingRight = UDim.new(0, 4),
+		}),
+
+		Menu = showMenu and Roact.createElement(SettingsMenu, {
+			OnClose = self.hideMenu,
 		}),
 
 		AlignLeft = Roact.createElement("Frame", {
@@ -149,6 +172,16 @@ function TopToolbar:render()
 				ColorImage = true,
 				Tooltip = not selecting and (center and tooltips.Center or tooltips.Actual) or nil,
 				OnActivated = self.toggleAlignment,
+			}),
+
+			Menu = Roact.createElement(TextButton, {
+				LayoutOrder = 2,
+				Text = "",
+				Icon = "rbxassetid://7143578075",
+				ImageSize = UDim2.fromOffset(20, 20),
+				ColorImage = true,
+				Tooltip = tooltips.Menu,
+				OnActivated = self.showMenu,
 			}),
 		}),
 	})
