@@ -17,4 +17,14 @@
 			Size = UDim2.fromScale(1, 1),
 			BackgroundColor3 = Color3.new(1, 1, 1),
 		}, CurrentElement))
+
+		-- Preview in 3D window
+		return Roact.createElement(Roact.Portal, {
+			target = game.StarterGui,
+		}, {
+			RoactVisualizer = Roact.createElement("ScreenGui", {
+				ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+				IgnoreGuiInset = true,
+			}, CurrentElement),
+		})
 HELP]]

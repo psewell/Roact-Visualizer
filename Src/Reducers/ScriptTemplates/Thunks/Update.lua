@@ -6,7 +6,7 @@
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local ScriptTemplates = main.Src.ScriptTemplates
 
-local pattern = "%-%-%[%[HELP.*HELP%]%]\n*"
+local pattern = "%s*%-%-%[%[HELP.*HELP%]%]"
 
 return function()
 	return function(store)
@@ -16,8 +16,8 @@ return function()
 		local props = state.ScriptTemplates.Props
 
 		if showHelp then
-			root.Source = string.format("%s\n\n%s", ScriptTemplates.RootHelp.Source, root.Source)
-			props.Source = string.format("%s\n\n%s", ScriptTemplates.PropsHelp.Source, props.Source)
+			root.Source = string.format("%s\n\n%s", root.Source, ScriptTemplates.RootHelp.Source)
+			props.Source = string.format("%s\n\n%s", props.Source, ScriptTemplates.PropsHelp.Source)
 		else
 			root.Source = string.gsub(root.Source, pattern, "", 1)
 			props.Source = string.gsub(props.Source, pattern, "", 1)

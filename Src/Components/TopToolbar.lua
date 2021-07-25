@@ -177,7 +177,7 @@ function TopToolbar:render()
 			Menu = Roact.createElement(TextButton, {
 				LayoutOrder = 2,
 				Text = "",
-				Icon = "rbxassetid://7143578075",
+				Icon = "rbxassetid://7149201173",
 				ImageSize = UDim2.fromOffset(20, 20),
 				ColorImage = true,
 				Tooltip = tooltips.Menu,
