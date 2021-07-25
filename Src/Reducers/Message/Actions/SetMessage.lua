@@ -9,6 +9,7 @@ local generateId = require(main.Packages.generateId)
 local t = require(main.Packages.t)
 
 local typecheck = t.interface({
+	Type = t.string,
 	Text = t.string,
 	Time = t.number,
 	Buttons = t.optional(t.table),
@@ -21,6 +22,7 @@ end
 
 local function reduce(state, action)
 	return Cryo.Dictionary.join(state, {
+		Type = action.Type,
 		Text = action.Text,
 		Time = action.Time,
 		MessageCode = generateId(),

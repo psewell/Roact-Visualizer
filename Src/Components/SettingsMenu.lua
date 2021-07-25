@@ -45,7 +45,7 @@ function SettingsMenu:init(initialProps)
 		local subMenu = plugin:CreatePluginMenu(generateId() .. "Settings", "Settings",
 			"rbxassetid://413362914")
 		subMenu.Name = "Settings"
-		subMenu:AddNewAction(generateId() .. "AutoRefresh", "Auto Refresh",
+		subMenu:AddNewAction(generateId() .. "AutoRefresh", "Auto Update",
 			self:getCheckMark(props.AutoRefresh))
 		subMenu:AddNewAction(generateId() .. "ShowHelp", "Show Help",
 			self:getCheckMark(props.ShowHelp))

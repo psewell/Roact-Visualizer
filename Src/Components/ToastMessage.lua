@@ -42,9 +42,9 @@ function ToastMessage:render()
 	local state = self.state
 	local props = self.props
 	local showMessage = state.showMessage
-	if props.MessageCode then
+	if props.MessageCode and props.Type then
 		return Roact.createFragment({
-			[props.MessageCode .. "Message"] = props.Text and Roact.createElement(Message, {
+			[props.Type] = props.Text and Roact.createElement(Message, {
 				VerticalAlignment = Enum.VerticalAlignment.Bottom,
 				Text = props.Text,
 				Visible = showMessage,
@@ -63,6 +63,7 @@ end
 
 ToastMessage = RoactRodux.connect(function(state)
 	return {
+		Type = state.Message.Type,
 		Text = state.Message.Text,
 		Time = state.Message.Time,
 		Buttons = state.Message.Buttons,

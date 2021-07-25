@@ -1,19 +1,11 @@
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local TestEZ = require(main.Packages.TestEZ)
 local Roact = require(main.Packages.Roact)
-local DynamicRequire = require(main.Src.Util.DynamicRequire)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local MainController = require(main.Src.Components.MainController)
 
 local Main = {}
 Main.__index = Main
-
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-	if input.KeyCode == Enum.KeyCode.F then
-		DynamicRequire.Require(workspace.TestScript)
-		print("Finished")
-	end
-end)
 
 function Main.new()
 	local self = {

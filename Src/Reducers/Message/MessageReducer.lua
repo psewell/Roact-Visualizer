@@ -3,6 +3,7 @@ local Rodux = require(main.Packages.Rodux)
 
 local Actions = script.Parent.Actions
 local initialState = {
+	Type = nil,
 	Text = nil,
 	Time = nil,
 	Buttons = nil,

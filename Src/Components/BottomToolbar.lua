@@ -49,7 +49,8 @@ function BottomToolbar:init(props)
 		if self.props.RootModule then
 			self.props.CloseModule()
 			self.props.SetMessage({
-				Text = "Component unloaded.",
+				Type = "Closed",
+				Text = "Component closed.",
 				Time = 2,
 			})
 		end

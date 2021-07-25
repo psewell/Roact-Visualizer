@@ -2,8 +2,6 @@
 	Viewing window for Roact-Visualizer.
 ]]
 
-local StudioService = game:GetService("StudioService")
-
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
@@ -16,6 +14,8 @@ local PluginContext = require(main.Src.Contexts.PluginContext)
 local SelectWindow = require(main.Src.Components.SelectWindow)
 local Connection = require(main.Src.Components.Signal.Connection)
 local getColor = require(main.Src.Util.getColor)
+local SyntaxError = require(main.Src.Util.SyntaxError)
+local t = require(main.Packages.t)
 
 local ViewWindow = Roact.PureComponent:extend("ViewWindow")
 
@@ -25,24 +25,19 @@ function ViewWindow:init()
 	self.ThirdPartyRoact = nil
 
 	self.state = {
+		connections = nil,
 		target = nil,
-		activeScript = StudioService.ActiveScript,
 	}
 
 	self.closeModule = function()
 		if self.props.RootModule then
 			self.props.CloseModule()
 			self.props.SetMessage({
-				Text = "Component unloaded.",
+				Type = "Closed",
+				Text = "Component closed.",
 				Time = 2,
 			})
 		end
-	end
-
-	self.updateActiveScript = function()
-		self:setState({
-			activeScript = StudioService.ActiveScript or Roact.None,
-		})
 	end
 end
 
@@ -55,6 +50,7 @@ end
 function ViewWindow:showErrorMessage(message, scriptInfo)
 	local props = self.props
 	props.SetMessage({
+		Type = "ErrorMessage",
 		Text = string.format("❗ %s Check the Output window for details.", message),
 		Time = -1,
 		Buttons = scriptInfo and {
@@ -92,17 +88,15 @@ function ViewWindow:loadComponent(lastProps)
 
 		local isValid = component and (typeof(component) == "function" or component.render ~= nil) or false
 
-		if component == nil or not success then
-			component = nil
+		if not success or not isValid then
+			if success and not isValid then
+				ComponentErrorReporter(string.format("Roact-Visualizer: Current script did not return a valid Roact component."))
+			end
 			self:showErrorMessage("Component encountered an error during load.", scriptInfo)
-		elseif not isValid then
-			props.SetMessage({
-				Text = "❗ Current module is not a valid Roact component.",
-				Time = 10,
-			})
 			return
 		elseif props.RootModule ~= lastProps.RootModule then
 			props.SetMessage({
+				Type = "LoadedComponent",
 				Text = "Component successfully loaded.",
 				Time = 2,
 			})
@@ -119,12 +113,18 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 	local didLoadProps, propsResult, propsCached
 	xpcall(function()
 		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript, {})
-		didLoadProps = true
+		if propsResult and t.table(propsResult) then
+			didLoadProps = true
+		else
+			ComponentErrorReporter(string.format("Roact-Visualizer: Props script did not return a valid table."))
+			self:showErrorMessage("Props encountered an error during load.")
+			didLoadProps = false
+		end
 	end, function(err)
 		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
 		ComponentErrorReporter(string.format("Roact-Visualizer: Props Error during Load:\n\t%s", traceback))
-		didLoadProps = false
 		self:showErrorMessage("Props encountered an error during load.", scriptInfo)
+		didLoadProps = false
 	end)
 
 	if not didLoadProps then
@@ -146,12 +146,18 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 				CurrentElement = element,
 			})
 		end
-		didLoadRoot = true
+		if rootResult and rootResult.component ~= nil then
+			didLoadRoot = true
+		else
+			ComponentErrorReporter(string.format("Roact-Visualizer: Root script did not return a valid Roact tree."))
+			self:showErrorMessage("Root encountered an error during load.")
+			didLoadRoot = false
+		end
 	end, function(err)
 		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
 		ComponentErrorReporter(string.format("Roact-Visualizer: Root Error during Load:\n\t%s", traceback))
-		didLoadRoot = false
 		self:showErrorMessage("Root encountered an error during load.", scriptInfo)
+		didLoadRoot = false
 	end)
 
 	if not didLoadRoot then
@@ -179,21 +185,25 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 	if success then
 		if moduleCached and propsCached and rootCached then
 			props.SetMessage({
+				Type = "NoChanges",
 				Text = "Component not updated: No changes detected.",
 				Time = 2,
 			})
 		elseif moduleCached and propsCached and not rootCached then
 			props.SetMessage({
+				Type = "RootUpdated",
 				Text = "Root successfully updated.",
 				Time = 2,
 			})
 		elseif moduleCached and rootCached and not propsCached then
 			props.SetMessage({
+				Type = "PropsUpdated",
 				Text = "Props successfully updated.",
 				Time = 2,
 			})
 		else
 			props.SetMessage({
+				Type = "ComponentUpdated",
 				Text = "Component successfully updated.",
 				Time = 2,
 			})
@@ -212,7 +222,7 @@ function ViewWindow:didUpdate(lastProps, lastState)
 		or props.ReloadCode ~= lastProps.ReloadCode then
 
 		if self.ThirdPartyRoact == nil or props.RoactInstall ~= lastProps.RoactInstall then
-			self.ThirdPartyRoact = DynamicRequire.Require(props.RoactInstall)
+			self.ThirdPartyRoact = DynamicRequire.RequireStaticModule(props.RoactInstall)
 			self.ThirdPartyRoact.setGlobalConfig({
 				elementTracing = true,
 			})
@@ -232,7 +242,24 @@ function ViewWindow:didUpdate(lastProps, lastState)
 				self.handle = nil
 			end
 		end
+
+		self:makeConnections()
 	end
+end
+
+function ViewWindow:makeConnections()
+	local props = self.props
+	local connections = {}
+	local active = DynamicRequire.GetActiveModules()
+	for id, item in pairs(active) do
+		connections[id] = Roact.createElement(Connection, {
+			Signal = item.Module:GetPropertyChangedSignal("Source"),
+			Callback = props.Reload,
+		})
+	end
+	self:setState({
+		connections = Roact.createFragment(connections),
+	})
 end
 
 function ViewWindow:render()
@@ -240,7 +267,7 @@ function ViewWindow:render()
 	local theme = props.Theme
 	local center = props.AlignCenter
 	local state = self.state
-	local activeScript = state.activeScript
+	local connections = state.connections
 
 	return Roact.createElement("ScrollingFrame", {
 		ZIndex = 2,
@@ -261,31 +288,21 @@ function ViewWindow:render()
 		[Roact.Ref] = self.targetRef,
 	}, {
 		SelectWindow = props.RootModule == nil
-			and Roact.createElement(SelectWindow),
+			and Roact.createElement(SelectWindow) or nil,
 
 		Center = props.RootModule and center and Roact.createElement("UIListLayout", {
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}) or nil,
 
-		ActiveScript = Roact.createElement(Connection, {
-			Signal = StudioService:GetPropertyChangedSignal("ActiveScript"),
-			Callback = self.updateActiveScript,
-		}) or nil,
-
-		AutoRefresh = props.RootModule and activeScript
-			and DynamicRequire.IsInRequireChain(activeScript)
-			and Roact.createElement(Connection, {
-			Signal = activeScript:GetPropertyChangedSignal("Source"),
-			Callback = props.Reload,
-		}) or nil,
+		Connections = props.AutoRefresh and connections or nil,
 	})
 end
 
 function ViewWindow:willUnmount()
 	if self.handle then
 		local props = self.props
-		local ThirdPartyRoact = DynamicRequire.Require(props.RoactInstall)
+		local ThirdPartyRoact = DynamicRequire.RequireStaticModule(props.RoactInstall)
 		ThirdPartyRoact.unmount(self.handle)
 		self.handle = nil
 	end
@@ -300,6 +317,7 @@ ViewWindow = RoactRodux.connect(function(state)
 		RootModule = state.PluginState.RootModule,
 		RoactInstall = state.PluginState.RoactInstall,
 		ReloadCode = state.PluginState.ReloadCode,
+		Recording = state.PluginState.Recording,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)
