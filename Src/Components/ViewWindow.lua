@@ -41,6 +41,147 @@ function ViewWindow:didMount()
 	})
 end
 
+function ViewWindow:showErrorMessage(message, scriptInfo)
+	local props = self.props
+	props.SetMessage({
+		Text = string.format("❗ %s Check the Output window for details.", message),
+		Time = -1,
+		Buttons = scriptInfo and {
+			{
+				Text = "Go to Error",
+				OnActivated = function()
+					local plugin = PluginContext:get(self)
+					plugin:OpenScript(scriptInfo.Script, scriptInfo.LineNumber)
+				end,
+			},
+			{
+				Text = "Close",
+				OnActivated = self.closeModule,
+			},
+		} or nil,
+	})
+end
+
+function ViewWindow:loadComponent(lastProps)
+	local props = self.props
+	local name, component, didCache
+	if props.RootModule then
+		local rootModule = props.RootModule
+		name = rootModule:GetDebugId()
+
+		local success, traceback, scriptInfo
+		xpcall(function()
+			component, didCache = DynamicRequire.RequireWithCacheResult(rootModule)
+			success = true
+		end, function(err)
+			traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
+			ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Load:\n\t%s", traceback))
+			success = false
+		end)
+
+		local isValid = typeof(component) == "function" or component.render ~= nil
+
+		if component == nil or not success then
+			component = nil
+			self:showErrorMessage("Component encountered an error during load.", scriptInfo)
+		elseif not isValid then
+			props.SetMessage({
+				Text = "❗ This module is not a Roact component.",
+				Time = 10,
+			})
+			props.CloseModule()
+			return
+		elseif props.RootModule ~= lastProps.RootModule then
+			props.SetMessage({
+				Text = "Component successfully loaded.",
+				Time = 2,
+			})
+		end
+	end
+	return name, component, didCache
+end
+
+function ViewWindow:updateTree(name, component, target, didCache)
+	local props = self.props
+	local rootScript = props.Root
+	local propsScript = props.Props
+
+	local didLoadProps, propsResult
+	xpcall(function()
+		local propsCached
+		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript)
+		didCache = didCache and propsCached
+		didLoadProps = true
+	end, function(err)
+		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
+		ComponentErrorReporter(string.format("Roact-Visualizer: Props Error during Load:\n\t%s", traceback))
+		didLoadProps = false
+		self:showErrorMessage("Props encountered an error during load.", scriptInfo)
+	end)
+
+	if not didLoadProps then
+		return
+	end
+
+	local element = self.ThirdPartyRoact.createElement(component, propsResult)
+
+	local didLoadRoot, rootResult
+	xpcall(function()
+		local rootCached
+		rootResult, rootCached = DynamicRequire.RequireWithCacheResult(rootScript, {
+			Roact = self.ThirdPartyRoact,
+			CurrentElement = element,
+		})
+		didCache = didCache and rootCached
+		didLoadRoot = true
+	end, function(err)
+		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
+		ComponentErrorReporter(string.format("Roact-Visualizer: Root Error during Load:\n\t%s", traceback))
+		didLoadRoot = false
+		self:showErrorMessage("Root encountered an error during load.", scriptInfo)
+	end)
+
+	if not didLoadRoot then
+		return
+	end
+
+	local tree = self.ThirdPartyRoact.createElement(self.ThirdPartyRoact.Portal, {
+		target = target,
+	}, rootResult)
+
+	print(tree)
+
+	local success, traceback, scriptInfo
+	xpcall(function()
+		if self.handle then
+			self.handle = self.ThirdPartyRoact.update(self.handle, tree)
+		else
+			self.handle = self.ThirdPartyRoact.mount(tree)
+		end
+		success = true
+	end, function(err)
+		traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
+		ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Render:\n\t%s", traceback))
+		success = false
+	end)
+
+	if success then
+		if didCache then
+			props.SetMessage({
+				Text = "Component not updated: No changes detected.",
+				Time = 2,
+			})
+		else
+			props.SetMessage({
+				Text = "Component successfully updated.",
+				Time = 2,
+			})
+		end
+	else
+		self:showErrorMessage("Component encountered an error during render.", scriptInfo)
+	end
+end
+
 function ViewWindow:didUpdate(lastProps, lastState)
 	local state = self.state
 	local target = state.target
@@ -58,105 +199,9 @@ function ViewWindow:didUpdate(lastProps, lastState)
 		end
 
 		if target then
-			local name, component
-			if props.RootModule then
-				local rootModule = props.RootModule
-				local didCache
-				name = rootModule:GetDebugId()
-				local success, traceback, scriptInfo
-				xpcall(function()
-					component, didCache = DynamicRequire.RequireWithCacheResult(rootModule)
-					success = true
-				end, function(err)
-					traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
-					ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Load:\n\t%s", traceback))
-					success = false
-				end)
-
-				local isValid = typeof(component) == "function" or component.render ~= nil
-
-				if component == nil or not success then
-					component = nil
-					props.SetMessage({
-						Text = "❗ Component encountered an error during load. Check the Output window for details.",
-						Time = -1,
-						Buttons = scriptInfo and {
-							{
-								Text = "Go To Error",
-								OnActivated = function()
-									local plugin = PluginContext:get(self)
-									plugin:OpenScript(scriptInfo.Script, scriptInfo.LineNumber)
-								end,
-							},
-							{
-								Text = "Close",
-								OnActivated = self.closeModule,
-							},
-						} or nil,
-					})
-				elseif not isValid then
-					props.SetMessage({
-						Text = "❗ This module is not a Roact component.",
-						Time = 10,
-					})
-					props.CloseModule()
-					return
-				elseif props.RootModule ~= lastProps.RootModule then
-					props.SetMessage({
-						Text = "Component successfully loaded.",
-						Time = 2,
-					})
-				elseif didCache then
-					props.SetMessage({
-						Text = "Component not reloaded: No changes detected.",
-						Time = 3,
-					})
-				else
-					props.SetMessage({
-						Text = "Component successfully reloaded.",
-						Time = 2,
-					})
-				end
-			end
-
+			local name, component, didCache = self:loadComponent(lastProps)
 			if name and component then
-				local tree = self.ThirdPartyRoact.createElement(self.ThirdPartyRoact.Portal, {
-					target = target,
-				}, {
-					[name] = component and self.ThirdPartyRoact.createElement(component) or nil,
-				})
-				local success, traceback, scriptInfo
-				xpcall(function()
-					if self.handle then
-						self.handle = self.ThirdPartyRoact.update(self.handle, tree)
-					else
-						self.handle = self.ThirdPartyRoact.mount(tree)
-					end
-					success = true
-				end, function(err)
-					traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
-					ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Render:\n\t%s", traceback))
-					success = false
-				end)
-				if not success then
-					props.SetMessage({
-						Text = "❗ Component encountered an error during render. Check the Output window for details.",
-						Time = -1,
-						Buttons = scriptInfo and {
-							{
-								Text = "Go To Error",
-								OnActivated = function()
-									local plugin = PluginContext:get(self)
-									plugin:OpenScript(scriptInfo.Script, scriptInfo.LineNumber)
-								end,
-							},
-							{
-								Text = "Close",
-								OnActivated = self.closeModule,
-							},
-						} or nil,
-					})
-				end
+				self:updateTree(name, component, target, didCache)
 			elseif self.handle then
 				self.ThirdPartyRoact.unmount(self.handle)
 				self.handle = nil
@@ -170,7 +215,7 @@ function ViewWindow:render()
 	local theme = props.Theme
 	local center = props.AlignCenter
 
-	return Roact.createElement("Frame", {
+	return Roact.createElement("ScrollingFrame", {
 		ZIndex = 2,
 		BackgroundColor3 = getColor(function(c)
 			return theme:GetColor(c.Midlight)
@@ -180,6 +225,12 @@ function ViewWindow:render()
 		Size = UDim2.new(1, -8, 1, -68),
 		Position = UDim2.new(0, 4, 1, -34),
 		AnchorPoint = Vector2.new(0, 1),
+		CanvasSize = UDim2.new(1, -8, 1, -68),
+		AutomaticCanvasSize = Enum.AutomaticSize.XY,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = getColor(function(c)
+			return theme:GetColor(c.ScrollBar)
+		end),
 		[Roact.Ref] = self.targetRef,
 	}, {
 		SelectWindow = props.RootModule == nil
@@ -203,6 +254,8 @@ end
 
 ViewWindow = RoactRodux.connect(function(state)
 	return {
+		Props = state.ScriptTemplates.Props,
+		Root = state.ScriptTemplates.Root,
 		AlignCenter = state.PluginState.AlignCenter,
 		RootModule = state.PluginState.RootModule,
 		RoactInstall = state.PluginState.RoactInstall,

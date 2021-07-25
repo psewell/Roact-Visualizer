@@ -3,8 +3,9 @@
 ]]
 
 local tooltips = {
-	Select = [[Select a Component's ModuleScript for previewing]],
-	Close = [[Close the current Component]],
+	Select = [[Start selecting a new component to preview]],
+	Open = [[View in script editor]],
+	Close = [[Close the current component]],
 	About = [[About this Plugin]],
 }
 
@@ -17,6 +18,7 @@ local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local TextButton = require(main.Src.Components.TextButton)
 local Connection = require(main.Src.Components.Signal.Connection)
 local GetTextSize = require(main.Packages.GetTextSize)
+local PluginContext = require(main.Src.Contexts.PluginContext)
 local getColor = require(main.Src.Util.getColor)
 
 local BottomToolbar = Roact.PureComponent:extend("BottomToolbar")
@@ -51,6 +53,11 @@ function BottomToolbar:init(props)
 				Time = 2,
 			})
 		end
+	end
+
+	self.openModule = function()
+		local plugin = PluginContext:get(self)
+		plugin:OpenScript(self.props.RootModule)
 	end
 end
 
@@ -87,10 +94,10 @@ function BottomToolbar:render()
 			Text = rootModule.Name,
 		})
 		local textWidth
-		if smallSize.X > (absoluteSize.X - 142) then
-			textWidth = absoluteSize.X - 142
+		if smallSize.X > (absoluteSize.X - 172) then
+			textWidth = absoluteSize.X - 172
 			text = rootModule.Name
-		elseif largeSize.X > (absoluteSize.X - 142) then
+		elseif largeSize.X > (absoluteSize.X - 172) then
 			textWidth = smallSize.X
 			text = rootModule.Name
 		else
@@ -137,35 +144,68 @@ function BottomToolbar:render()
 		SelectButton = Roact.createElement(TextButton, {
 			LayoutOrder = 1,
 			Text = minified and "" or "Select",
-			Icon = "rbxassetid://2254538897",
-			ImageOffset = Vector2.new(0, 2),
+			Icon = "rbxassetid://7148404429",
+			ImageSize = UDim2.fromOffset(20, 20),
+			ImageOffset = Vector2.new(0, 1),
+			ColorImage = true,
 			Tooltip = not selecting and tooltips.Select or nil,
 			OnActivated = props.StartSelecting,
+			Enabled = rootModule ~= nil,
 		}),
 
-		CloseButton = rootModule and Roact.createElement(TextButton, {
+		OpenButton = Roact.createElement(TextButton, {
 			Text = "",
 			LayoutOrder = 2,
-			Icon = "rbxasset://textures/StudioSharedUI/close.png",
-			ImageSize = UDim2.fromOffset(16, 16),
+			Icon = "rbxassetid://7148310413",
+			ImageSize = UDim2.fromOffset(20, 20),
 			ColorImage = true,
-			Tooltip = not selecting and tooltips.Close or nil,
-			OnActivated = self.closeModule,
+			Tooltip = not selecting and tooltips.Open or nil,
+			OnActivated = self.openModule,
+			Enabled = rootModule ~= nil,
 		}),
 
 		CurrentModule = rootModule and Roact.createElement("TextLabel", {
-			Text = text,
+			ZIndex = 0,
 			Size = textSize,
-			Font = Enum.Font.SourceSans,
-			TextSize = 18,
-			TextTruncate = Enum.TextTruncate.AtEnd,
 			LayoutOrder = 3,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Center,
 			BackgroundTransparency = 1,
-			TextColor3 = getColor(function(c)
-				return theme:GetColor(c.MainText)
-			end),
+		}, {
+			Text = Roact.createElement("TextLabel", {
+				ZIndex = 2,
+				Text = text,
+				Size = UDim2.fromScale(1, 1),
+				Font = Enum.Font.SourceSans,
+				TextSize = 18,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Center,
+				BackgroundTransparency = 1,
+				TextColor3 = getColor(function(c)
+					return theme:GetColor(c.MainText)
+				end),
+			}),
+
+			Background = Roact.createElement("Frame", {
+				ZIndex = 1,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, 10, 1, 0),
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.fromScale(0.5, 0),
+				BackgroundColor3 = getColor(function(c)
+					return theme:GetColor(c.TableItem)
+				end),
+			}),
+		}),
+
+		CloseButton = Roact.createElement(TextButton, {
+			Text = "",
+			LayoutOrder = 4,
+			Icon = "rbxassetid://7148387208",
+			ImageSize = UDim2.fromOffset(20, 20),
+			ColorImage = true,
+			Tooltip = not selecting and tooltips.Close or nil,
+			OnActivated = self.closeModule,
+			Enabled = rootModule ~= nil,
 		}),
 
 		IgnoreLayout = Roact.createElement("Folder", {}, {

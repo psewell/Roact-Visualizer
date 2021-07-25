@@ -2,6 +2,8 @@
 	Used to select a RootModule.
 ]]
 
+local StudioService = game:GetService("StudioService")
+
 local selectMessage = [[Select or drag a component's ModuleScript
 from the Explorer]]
 
@@ -12,6 +14,7 @@ local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local Connection = require(main.Src.Components.Signal.Connection)
+local HeartbeatConnection = require(main.Src.Components.Signal.HeartbeatConnection)
 local Message = require(main.Src.Components.Message)
 
 local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
@@ -30,7 +33,13 @@ function ModuleSelector:init()
 	self.setModule = function()
 		local items = Selection:Get()
 		local item = items[1]
-		self.props.SetRootModule(item)
+		if items[1] and items[1]:IsA("ModuleScript") and #items == 1 then
+			self.props.SetRootModule(item)
+		elseif StudioService.ActiveScript and StudioService.ActiveScript:IsA("ModuleScript") then
+			self.props.SetRootModule(StudioService.ActiveScript)
+		else
+			self.props.SetRootModule(nil)
+		end
 		Selection:Set({})
 		self.props.StopSelecting()
 	end
@@ -86,10 +95,20 @@ function ModuleSelector:init()
 				DragIcon = "rbxassetid://2254538897",
 				HotSpot = Vector2.new(-20, -20),
 			})
+		elseif StudioService.ActiveScript and StudioService.ActiveScript:IsA("ModuleScript") then
+			self:setState({
+				selectedObject = StudioService.ActiveScript,
+			})
 		else
 			self:setState({
 				selectedObject = Roact.None,
 			})
+		end
+	end
+
+	self.updateActiveScript = function()
+		if StudioService.ActiveScript == nil then
+			self.onSelectionChanged()
 		end
 	end
 end
@@ -118,6 +137,18 @@ function ModuleSelector:render()
 	local selectedObject = state.selectedObject
 	local props = self.props
 	local selecting = props.SelectingModule
+
+	local activeScript = StudioService.ActiveScript
+	local validSelectText
+	if selectedObject then
+		if activeScript == selectedObject then
+			validSelectText = string.format("Active Script:\n%s", selectedObject:GetFullName())
+		else
+			validSelectText = string.format("Current Selection:\n%s", selectedObject:GetFullName())
+		end
+	else
+		validSelectText = ""
+	end
 
 	return Roact.createFragment({
 		DragArea = Roact.createElement("Frame", {
@@ -148,6 +179,15 @@ function ModuleSelector:render()
 				Callback = self.onSelectionChanged,
 			}),
 
+			ActiveScriptConnection = selecting and Roact.createElement(Connection, {
+				Signal = StudioService:GetPropertyChangedSignal("ActiveScript"),
+				Callback = self.onSelectionChanged,
+			}),
+
+			UpdateActiveScript = selecting and activeScript and Roact.createElement(HeartbeatConnection, {
+				Update = self.updateActiveScript,
+			}),
+
 			Cover = Roact.createElement("ImageButton", {
 				ZIndex = 4,
 				Size = UDim2.fromScale(1, 1),
@@ -176,7 +216,7 @@ function ModuleSelector:render()
 		ValidSelectToast = selectedObject and not dragObject and Roact.createElement(Message, {
 			ZIndex = 5,
 			Visible = selecting,
-			Text = selectedObject and selectedObject:GetFullName() or "",
+			Text = validSelectText,
 			Icon = "rbxassetid://2254538897",
 			Buttons = {
 				{

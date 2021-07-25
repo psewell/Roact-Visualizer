@@ -11,7 +11,7 @@ local require = getfenv().require
 local DynamicRequire
 local modules = {}
 
-local function dynamicRequire(module, overrideRequire)
+local function dynamicRequire(module, overrideRequire, overrideScript)
 	local newSource = string.format(scriptPlate, module:GetFullName(),
 		module:GetDebugId(), module.Source)
 	local func = loadstring(newSource)
@@ -19,7 +19,7 @@ local function dynamicRequire(module, overrideRequire)
 		return {}
 	end
 	local env = getfenv(func)
-	env.script = module
+	env.script = overrideScript or module
 	env.require = overrideRequire
 	setfenv(func, env)
 	local result = func()
@@ -44,7 +44,7 @@ local function checkDependencies(id)
 	return isDirty
 end
 
-local function dynamicRequireImpl(module, parentId)
+local function dynamicRequireImpl(module, parentId, overrideScript)
 	local src = module.Source
 	local id = module:GetDebugId()
 	if modules[id] == nil then
@@ -66,7 +66,7 @@ local function dynamicRequireImpl(module, parentId)
 		modules[id].Source = src
 		local result = dynamicRequire(module, function(dependency)
 			return dynamicRequireImpl(dependency, id)
-		end)
+		end, parentId == nil and overrideScript or nil)
 		modules[id].Cached = result
 		modules[id].IsDirty = false
 		return result, false
@@ -83,8 +83,8 @@ local function req(module)
 	return result
 end
 
-local function reqWithCacheResult(module)
-	local result, didCache = dynamicRequireImpl(module, nil)
+local function reqWithCacheResult(module, overrideScript)
+	local result, didCache = dynamicRequireImpl(module, nil, overrideScript)
 	return result, didCache
 end
 
