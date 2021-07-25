@@ -8,16 +8,23 @@ local require = getfenv().require
 %s
 ]]
 
+local main = script:FindFirstAncestor("Roact-Visualizer")
+local Cryo = require(main.Packages.Cryo)
+
 local DynamicRequire
 local modules = {}
 
 local function dynamicRequire(module, overrideRequire, overrideScript)
-	local newSource = string.format(scriptPlate, module:GetFullName(),
-		module:GetDebugId(), module.Source)
-	local func = loadstring(newSource)
-	if func == nil then
-		return {}
+	local scriptName
+	if string.find(module.Name, " %(Roact Visualizer%)") then
+		scriptName = "Roact-Visualizer." .. string.gsub(module.Name, " %(Roact Visualizer%)", "")
+	else
+		scriptName = module:GetFullName()
 	end
+	local newSource = string.format(scriptPlate, scriptName,
+		module:GetDebugId(), module.Source)
+	local func, err = loadstring(newSource)
+	assert(func, err)
 	local env = getfenv(func)
 	env.script = overrideScript or module
 	env.require = overrideRequire
@@ -44,7 +51,7 @@ local function checkDependencies(id)
 	return isDirty
 end
 
-local function dynamicRequireImpl(module, parentId, overrideScript, force)
+local function dynamicRequireImpl(module, parentId, overrideScript, force, static)
 	local src = module.Source
 	local id = module:GetDebugId()
 	if modules[id] == nil then
@@ -52,6 +59,7 @@ local function dynamicRequireImpl(module, parentId, overrideScript, force)
 			Module = module,
 			IsDirty = true,
 			Dependencies = {},
+			Static = static,
 		}
 	end
 
@@ -66,7 +74,7 @@ local function dynamicRequireImpl(module, parentId, overrideScript, force)
 		modules[id].Dependencies = {}
 		modules[id].Source = src
 		local result = dynamicRequire(module, function(dependency)
-			return dynamicRequireImpl(dependency, id)
+			return dynamicRequireImpl(dependency, id, nil, nil, static)
 		end, parentId == nil and overrideScript or nil)
 		modules[id].Cached = result
 		modules[id].IsDirty = false
@@ -94,60 +102,82 @@ local function reqWithCacheResult(module, overrideScript)
 	return result, didCache
 end
 
+local function reqStaticModule(module)
+	local result = (dynamicRequireImpl(module, nil, nil, false, true))
+	return result
+end
+
 local function getErrorTraceback(err, traceback)
 	local items = string.split(traceback, "\n")
-	local scriptName = string.sub(items[2], 39)
-	local debugId = string.sub(items[3], 3)
-	local lineNumber
-	for index = 1, #items do
-		local item = items[index]
-		if (string.find(item, "Src.Util.DynamicRequire"))
-			and string.find(item, "function dynamicRequire") then
-			local lineNumberItem = items[index - 1]
-			lineNumber = string.match(lineNumberItem, ".*%f[%d.](%d*%.?%d+)")
-			lineNumber = tonumber(lineNumber) - 4
-			break
-		end
+	local scriptName, lineNumber, debugId
+
+	if (string.find(err, GUID)) then
+		err = string.gsub(err, ".*" .. GUID, "")
+		local nameString = string.gsub(err, "%.%.%.\"%]%:.*", "")
+		scriptName = nameString
+		local numString = string.gsub(err, ".*%.%.%.\"%]%:", "")
+		numString = string.gsub(numString, "%:.*", "")
+		lineNumber = tonumber(numString) - 4
+		err = string.gsub(err, ".*%.%.%.\"%]%:%d*%:%s*", "")
+		debugId = string.sub(items[3], 3)
+	else
+		scriptName = string.gsub(items[2], ".*" .. GUID, "")
+		debugId = string.sub(items[3], 3)
 	end
+
 	if lineNumber == nil then
-		local seenId = false
 		for index = 1, #items do
 			local item = items[index]
-			if (string.find(item, GUID)) then
-				if seenId then
-					local lineNumberItem = items[index - 1]
-					lineNumber = string.match(lineNumberItem, ".*%f[%d.](%d*%.?%d+)")
-					lineNumber = tonumber(lineNumber) - 4
-					break
-				else
-					seenId = true
-				end
+			if (string.find(item, "Src.Util.DynamicRequire"))
+				and string.find(item, "function dynamicRequire") then
+				local lineNumberItem = items[index - 1]
+				lineNumber = string.match(lineNumberItem, ".*%f[%d.](%d*%.?%d+)")
+				lineNumber = tonumber(lineNumber) - 4
+				break
 			end
 		end
 	end
+
 	local module
-	if modules[debugId] and modules[debugId].Module
+	if debugId and modules[debugId] and modules[debugId].Module
 		and modules[debugId].Module.Parent ~= nil then
 		module = modules[debugId].Module
 	end
-	err = string.gsub(err, "%[.*%]:%d*: ", "")
+
 	return string.format("%s:%i: %s", scriptName, lineNumber, err), module and {
 		Script = module,
 		LineNumber = lineNumber,
 	} or nil
 end
 
+local function isInRequireChain(module)
+	local id = module:GetDebugId()
+	return modules[id] ~= nil
+end
+
 local function clear()
-	modules = {}
+	modules = Cryo.Dictionary.filter(modules, function(value)
+		return value.Static
+	end)
 	DynamicRequire.___modules_TEST_ONLY = modules
+end
+
+local function getActiveModules()
+	local active = Cryo.Dictionary.filter(modules, function(value)
+		return value.Module ~= nil and not value.Static
+	end)
+	return active
 end
 
 DynamicRequire = {
 	Require = req,
 	RequireWithCacheResult = reqWithCacheResult,
+	RequireStaticModule = reqStaticModule,
 	ForceRequire = force,
 	GetErrorTraceback = getErrorTraceback,
+	IsInRequireChain = isInRequireChain,
 	Clear = clear,
+	GetActiveModules = getActiveModules,
 	___modules_TEST_ONLY = modules,
 }
 

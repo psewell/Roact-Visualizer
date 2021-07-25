@@ -2,6 +2,8 @@
 	Toolbar controls at the top of the visualizer.
 ]]
 
+local function NOOP() end
+
 local tooltips = {
 	Update = [[Update the current component to reflect the latest changes]],
 	Root = [[Edit the Roact tree above the current component]],
@@ -9,6 +11,8 @@ local tooltips = {
 	Center = [[Alignment: Centered]],
 	Actual = [[Alignment: Actual]],
 	Menu = [[Access settings and additional controls]],
+	Recording = [[Auto Update is actively polling script changes]],
+	NotRecording = [[Auto Update is not polling - no component is being displayed]],
 }
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
@@ -46,6 +50,7 @@ function TopToolbar:init(props)
 		local plugin = PluginContext:get(self)
 		plugin:OpenScript(self.props.Root)
 		self.props.SetMessage({
+			Type = "OpenedRootModule",
 			Text = "Opened Root module",
 			Time = 2,
 		})
@@ -55,6 +60,7 @@ function TopToolbar:init(props)
 		local plugin = PluginContext:get(self)
 		plugin:OpenScript(self.props.Props)
 		self.props.SetMessage({
+			Type = "OpenedPropsModule",
 			Text = "Opened Props module",
 			Time = 2,
 		})
@@ -80,6 +86,7 @@ function TopToolbar:render()
 	local selecting = props.SelectingModule
 	local center = props.AlignCenter
 	local rootModule = props.RootModule
+
 	local state = self.state
 	local showMenu = state.showMenu
 
@@ -117,7 +124,7 @@ function TopToolbar:render()
 				Padding = UDim.new(0, 4),
 			}),
 
-			RefreshButton = Roact.createElement(TextButton, {
+			RefreshButton = not props.AutoRefresh and Roact.createElement(TextButton, {
 				LayoutOrder = 1,
 				Text = minified and "" or "Update",
 				Icon = "rbxassetid://7148367326",
@@ -127,7 +134,18 @@ function TopToolbar:render()
 				Tooltip = not selecting and tooltips.Update or nil,
 				OnActivated = props.Reload,
 				Enabled = rootModule ~= nil,
-			}),
+			}) or nil,
+
+			AutoRefresh = props.AutoRefresh and Roact.createElement(TextButton, {
+				LayoutOrder = 1,
+				Text = minified and "" or "Auto",
+				Icon = rootModule and "rbxassetid://7152317618" or "rbxassetid://7152324797",
+				ImageSize = UDim2.fromOffset(20, 20),
+				ColorImage = true,
+				Tooltip = rootModule and tooltips.Recording or tooltips.NotRecording,
+				OnActivated = NOOP,
+				Enabled = false,
+			}) or nil,
 
 			Root = Roact.createElement(TextButton, {
 				LayoutOrder = 2,
@@ -194,6 +212,7 @@ TopToolbar = RoactRodux.connect(function(state)
 		AlignCenter = state.PluginState.AlignCenter,
 		SelectingModule = state.PluginState.SelectingModule,
 		RootModule = state.PluginState.RootModule,
+		AutoRefresh = state.Settings.AutoRefresh,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)

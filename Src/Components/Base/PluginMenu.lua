@@ -27,7 +27,7 @@ function PluginMenu:didMount()
 	local props = self.props
 	local plugin = PluginContext:get(self)
 	local pluginMenu = plugin:CreatePluginMenu(generateId(), props.Name)
-	self.menu = props.CreateMenu(pluginMenu)
+	self.menu = props.CreateMenu(pluginMenu, plugin)
 	task.defer(function()
 		if not self.unmounted then
 			local result = self.menu:ShowAsync()

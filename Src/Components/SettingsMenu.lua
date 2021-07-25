@@ -9,6 +9,7 @@ local PluginMenu = require(main.Src.Components.Base.PluginMenu)
 local generateId = require(main.Packages.generateId)
 
 local SetShowHelp = require(main.Src.Reducers.Settings.Thunks.SetShowHelp)
+local SetSetting = require(main.Src.Reducers.Settings.Actions.SetSetting)
 
 local SettingsMenu = Roact.PureComponent:extend("SettingsMenu")
 local t = require(main.Packages.t)
@@ -34,16 +35,39 @@ end
 function SettingsMenu:init(initialProps)
 	assert(typecheck(initialProps))
 
-	self.createMenu = function(pluginMenu)
-		local props = self.props
-		pluginMenu:AddNewAction(generateId(), "Show Help", self:getCheckMark(props.ShowHelp))
+	self.createMenu = function(pluginMenu, plugin)
+		pluginMenu:AddMenu(self.createSettingsMenu(plugin))
 		return pluginMenu
 	end
 
-	self.onItemSelected = function(item)
+	self.createSettingsMenu = function(plugin)
 		local props = self.props
-		if item.Text == "Show Help" then
-			props.SetShowHelp(not props.ShowHelp)
+		local subMenu = plugin:CreatePluginMenu(generateId() .. "Settings", "Settings",
+			"rbxassetid://413362914")
+		subMenu.Name = "Settings"
+		subMenu:AddNewAction(generateId() .. "AutoRefresh", "Auto Update",
+			self:getCheckMark(props.AutoRefresh))
+		subMenu:AddNewAction(generateId() .. "ShowHelp", "Show Help",
+			self:getCheckMark(props.ShowHelp))
+		subMenu:AddNewAction(generateId() .. "MinimalAnimations", "Use Animations",
+			self:getCheckMark(not props.MinimalAnimations))
+		return subMenu
+	end
+
+	self.onItemSelected = function(item)
+		if item then
+			local props = self.props
+			if (string.find(item.ActionId, "ShowHelp")) then
+				props.SetShowHelp(not props.ShowHelp)
+			elseif (string.find(item.ActionId, "MinimalAnimations")) then
+				props.SetSetting({
+					MinimalAnimations = not props.MinimalAnimations
+				})
+			elseif (string.find(item.ActionId, "AutoRefresh")) then
+				props.SetSetting({
+					AutoRefresh = not props.AutoRefresh
+				})
+			end
 		end
 		self.props.OnClose()
 	end
@@ -58,13 +82,19 @@ end
 
 SettingsMenu = RoactRodux.connect(function(state)
 	return {
+		AutoRefresh = state.Settings.AutoRefresh,
 		ShowHelp = state.Settings.ShowHelp,
+		MinimalAnimations = state.Settings.MinimalAnimations,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)
 	return {
 		SetShowHelp = function(showHelp)
 			dispatch(SetShowHelp(showHelp))
+		end,
+
+		SetSetting = function(settings)
+			dispatch(SetSetting(settings))
 		end,
 	}
 end)(SettingsMenu)
