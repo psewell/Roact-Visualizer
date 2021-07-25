@@ -1,5 +1,5 @@
 --[[
-	Sets the new RootModule.
+	Sets a setting in the Settings.
 ]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
@@ -7,11 +7,7 @@ local Action = require(main.Packages.Action)
 local Cryo = require(main.Packages.Cryo)
 local t = require(main.Packages.t)
 
-local DynamicRequire = require(main.Src.Util.DynamicRequire)
-
-local typecheck = t.interface({
-	RootModule = t.optional(t.instanceIsA("ModuleScript")),
-})
+local typecheck = t.interface({})
 
 local function create(props)
 	assert(typecheck(props))
@@ -19,12 +15,7 @@ local function create(props)
 end
 
 local function reduce(state, action)
-	if action.RootModule ~= state.RootModule then
-		DynamicRequire.Clear()
-	end
-	return Cryo.Dictionary.join(state, {
-		RootModule = action.RootModule or Cryo.None,
-	})
+	return Cryo.Dictionary.join(state, action)
 end
 
 return Action(script.Name, create, reduce)

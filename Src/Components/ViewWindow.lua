@@ -2,15 +2,19 @@
 	Viewing window for Roact-Visualizer.
 ]]
 
+local StudioService = game:GetService("StudioService")
+
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local DynamicRequire = require(main.Src.Util.DynamicRequire)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
+local Reload = require(main.Src.Reducers.PluginState.Actions.Reload)
 local ComponentErrorReporter = require(main.Src.Util.ComponentErrorReporter)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local SelectWindow = require(main.Src.Components.SelectWindow)
+local Connection = require(main.Src.Components.Signal.Connection)
 local getColor = require(main.Src.Util.getColor)
 
 local ViewWindow = Roact.PureComponent:extend("ViewWindow")
@@ -22,6 +26,7 @@ function ViewWindow:init()
 
 	self.state = {
 		target = nil,
+		activeScript = StudioService.ActiveScript,
 	}
 
 	self.closeModule = function()
@@ -32,6 +37,12 @@ function ViewWindow:init()
 				Time = 2,
 			})
 		end
+	end
+
+	self.updateActiveScript = function()
+		self:setState({
+			activeScript = StudioService.ActiveScript or Roact.None,
+		})
 	end
 end
 
@@ -86,10 +97,9 @@ function ViewWindow:loadComponent(lastProps)
 			self:showErrorMessage("Component encountered an error during load.", scriptInfo)
 		elseif not isValid then
 			props.SetMessage({
-				Text = "❗ This module is not a Roact component.",
+				Text = "❗ Current module is not a valid Roact component.",
 				Time = 10,
 			})
-			props.CloseModule()
 			return
 		elseif props.RootModule ~= lastProps.RootModule then
 			props.SetMessage({
@@ -108,7 +118,7 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 
 	local didLoadProps, propsResult, propsCached
 	xpcall(function()
-		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript)
+		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript, {})
 		didLoadProps = true
 	end, function(err)
 		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
@@ -203,6 +213,10 @@ function ViewWindow:didUpdate(lastProps, lastState)
 
 		if self.ThirdPartyRoact == nil or props.RoactInstall ~= lastProps.RoactInstall then
 			self.ThirdPartyRoact = DynamicRequire.Require(props.RoactInstall)
+			self.ThirdPartyRoact.setGlobalConfig({
+				elementTracing = true,
+			})
+
 			if self.handle then
 				self.ThirdPartyRoact.unmount(self.handle)
 				self.handle = nil
@@ -225,6 +239,8 @@ function ViewWindow:render()
 	local props = self.props
 	local theme = props.Theme
 	local center = props.AlignCenter
+	local state = self.state
+	local activeScript = state.activeScript
 
 	return Roact.createElement("ScrollingFrame", {
 		ZIndex = 2,
@@ -251,6 +267,18 @@ function ViewWindow:render()
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}) or nil,
+
+		ActiveScript = Roact.createElement(Connection, {
+			Signal = StudioService:GetPropertyChangedSignal("ActiveScript"),
+			Callback = self.updateActiveScript,
+		}) or nil,
+
+		AutoRefresh = props.RootModule and activeScript
+			and DynamicRequire.IsInRequireChain(activeScript)
+			and Roact.createElement(Connection, {
+			Signal = activeScript:GetPropertyChangedSignal("Source"),
+			Callback = props.Reload,
+		}) or nil,
 	})
 end
 
@@ -268,6 +296,7 @@ ViewWindow = RoactRodux.connect(function(state)
 		Props = state.ScriptTemplates.Props,
 		Root = state.ScriptTemplates.Root,
 		AlignCenter = state.PluginState.AlignCenter,
+		AutoRefresh = state.Settings.AutoRefresh,
 		RootModule = state.PluginState.RootModule,
 		RoactInstall = state.PluginState.RoactInstall,
 		ReloadCode = state.PluginState.ReloadCode,
@@ -275,6 +304,10 @@ ViewWindow = RoactRodux.connect(function(state)
 	}
 end, function(dispatch)
 	return {
+		Reload = function()
+			dispatch(Reload({}))
+		end,
+
 		CloseModule = function()
 			dispatch(SetRootModule({
 				RootModule = nil,

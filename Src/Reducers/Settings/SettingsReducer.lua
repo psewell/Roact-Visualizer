@@ -3,7 +3,9 @@ local Rodux = require(main.Packages.Rodux)
 
 local Actions = script.Parent.Actions
 local initialState = {
+	AutoRefresh = false,
 	ShowHelp = true,
+	MinimalAnimations = false,
 }
 
 local function registerActions()

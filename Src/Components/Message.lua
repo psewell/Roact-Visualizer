@@ -104,6 +104,7 @@ function Message:render()
 		TweenIn = true,
 		Time = 0.3,
 		Offset = UDim2.fromOffset(0, 20),
+		MinimalAnimations = props.MinimalAnimations,
 	}, {
 		SizeChanged = pluginGui and Roact.createElement(Connection, {
 			Signal = pluginGui:GetPropertyChangedSignal("AbsoluteSize"),
@@ -177,6 +178,7 @@ end
 
 Message = RoactRodux.connect(function(state)
 	return {
+		MinimalAnimations = state.Settings.MinimalAnimations,
 		Theme = state.PluginState.Theme,
 	}
 end)(Message)

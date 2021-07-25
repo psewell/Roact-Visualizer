@@ -137,6 +137,11 @@ local function getErrorTraceback(err, traceback)
 	} or nil
 end
 
+local function isInRequireChain(module)
+	local id = module:GetDebugId()
+	return modules[id] ~= nil
+end
+
 local function clear()
 	modules = {}
 	DynamicRequire.___modules_TEST_ONLY = modules
@@ -147,6 +152,7 @@ DynamicRequire = {
 	RequireWithCacheResult = reqWithCacheResult,
 	ForceRequire = force,
 	GetErrorTraceback = getErrorTraceback,
+	IsInRequireChain = isInRequireChain,
 	Clear = clear,
 	___modules_TEST_ONLY = modules,
 }

@@ -28,11 +28,13 @@ local typecheck = t.interface({
 	TweenIn = t.optional(t.boolean),
 	ZIndex = t.optional(t.integer),
 	OnCompleted = t.optional(t.callback),
+	MinimalAnimations = t.optional(t.boolean),
 })
 
 GroupTweenJob.defaultProps = {
 	ZIndex = 1,
 	Offset = UDim2.new(),
+	MinimalAnimations = false,
 }
 
 function GroupTweenJob:init(props)
@@ -48,8 +50,27 @@ function GroupTweenJob:init(props)
 	end
 end
 
+function GroupTweenJob:makeVisibleNow()
+	if next(self.jobs) == nil then return end
+
+	for instance, initialState in pairs(self.jobs) do
+		for k, value in pairs(initialState) do
+			instance[k] = value
+		end
+	end
+	local catch = self.catchRef:getValue()
+	if catch then
+		catch.Position = UDim2.fromOffset(0, 0)
+	end
+end
+
 function GroupTweenJob:forward()
 	if next(self.jobs) == nil then return end
+
+	if self.props.MinimalAnimations then
+		self:makeInvisibleNow()
+		self.onCompleted(false)
+	end
 
 	local tweens = {}
 	for instance, initialState in pairs(self.jobs) do
@@ -105,6 +126,11 @@ end
 
 function GroupTweenJob:backward()
 	if next(self.jobs) == nil then return end
+
+	if self.props.MinimalAnimations then
+		self:makeVisibleNow()
+		self.onCompleted(true)
+	end
 
 	local tweens = {}
 	for instance, initialState in pairs(self.jobs) do
