@@ -1,2 +1,4 @@
-return {
+local Props = {
 }
+
+return Props
