@@ -44,7 +44,7 @@ local function checkDependencies(id)
 	return isDirty
 end
 
-local function dynamicRequireImpl(module, parentId, overrideScript)
+local function dynamicRequireImpl(module, parentId, overrideScript, force)
 	local src = module.Source
 	local id = module:GetDebugId()
 	if modules[id] == nil then
@@ -60,7 +60,8 @@ local function dynamicRequireImpl(module, parentId, overrideScript)
 		modules[parentId].Dependencies[id] = module
 	end
 
-	if isDirty or modules[id].Source ~= src then
+	if isDirty or modules[id].Source ~= src
+		or (parentId == nil and force) then
 		-- This module has changed. We need to dynamically require it.
 		modules[id].Dependencies = {}
 		modules[id].Source = src
@@ -80,6 +81,11 @@ end
 
 local function req(module)
 	local result = (dynamicRequireImpl(module, nil))
+	return result
+end
+
+local function force(module, overrideScript)
+	local result = (dynamicRequireImpl(module, nil, overrideScript, true))
 	return result
 end
 
@@ -139,6 +145,7 @@ end
 DynamicRequire = {
 	Require = req,
 	RequireWithCacheResult = reqWithCacheResult,
+	ForceRequire = force,
 	GetErrorTraceback = getErrorTraceback,
 	Clear = clear,
 	___modules_TEST_ONLY = modules,

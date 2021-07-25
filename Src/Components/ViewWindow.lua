@@ -79,7 +79,7 @@ function ViewWindow:loadComponent(lastProps)
 			success = false
 		end)
 
-		local isValid = typeof(component) == "function" or component.render ~= nil
+		local isValid = component and (typeof(component) == "function" or component.render ~= nil) or false
 
 		if component == nil or not success then
 			component = nil
@@ -101,16 +101,14 @@ function ViewWindow:loadComponent(lastProps)
 	return name, component, didCache
 end
 
-function ViewWindow:updateTree(name, component, target, didCache)
+function ViewWindow:updateTree(name, component, target, moduleCached)
 	local props = self.props
 	local rootScript = props.Root
 	local propsScript = props.Props
 
-	local didLoadProps, propsResult
+	local didLoadProps, propsResult, propsCached
 	xpcall(function()
-		local propsCached
 		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript)
-		didCache = didCache and propsCached
 		didLoadProps = true
 	end, function(err)
 		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
@@ -125,14 +123,19 @@ function ViewWindow:updateTree(name, component, target, didCache)
 
 	local element = self.ThirdPartyRoact.createElement(component, propsResult)
 
-	local didLoadRoot, rootResult
+	local didLoadRoot, rootResult, rootCached
 	xpcall(function()
-		local rootCached
 		rootResult, rootCached = DynamicRequire.RequireWithCacheResult(rootScript, {
 			Roact = self.ThirdPartyRoact,
 			CurrentElement = element,
 		})
-		didCache = didCache and rootCached
+		if not (moduleCached and propsCached) then
+			-- Force the root to update, there is an update ahead of us
+			rootResult = DynamicRequire.ForceRequire(rootScript, {
+				Roact = self.ThirdPartyRoact,
+				CurrentElement = element,
+			})
+		end
 		didLoadRoot = true
 	end, function(err)
 		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
@@ -149,8 +152,6 @@ function ViewWindow:updateTree(name, component, target, didCache)
 		target = target,
 	}, rootResult)
 
-	print(tree)
-
 	local success, traceback, scriptInfo
 	xpcall(function()
 		if self.handle then
@@ -166,9 +167,19 @@ function ViewWindow:updateTree(name, component, target, didCache)
 	end)
 
 	if success then
-		if didCache then
+		if moduleCached and propsCached and rootCached then
 			props.SetMessage({
 				Text = "Component not updated: No changes detected.",
+				Time = 2,
+			})
+		elseif moduleCached and propsCached and not rootCached then
+			props.SetMessage({
+				Text = "Root successfully updated.",
+				Time = 2,
+			})
+		elseif moduleCached and rootCached and not propsCached then
+			props.SetMessage({
+				Text = "Props successfully updated.",
 				Time = 2,
 			})
 		else
