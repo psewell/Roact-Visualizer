@@ -1,8 +1,8 @@
 local GUID = [[564A1C48%-74D3%-4521%-8083%-CC9757532BCF]]
 
 local scriptPlate = [[
---564A1C48-74D3-4521-8083-CC9757532BCF%s
---%s
+--564A1C48-74D3-4521-8083-CC9757532BCF%s564A1C48-74D3-4521-8083-CC9757532BCF%s
+
 local script = getfenv().script
 local require = getfenv().require
 %s
@@ -21,8 +21,7 @@ local function dynamicRequire(module, overrideRequire, overrideScript)
 	else
 		scriptName = module:GetFullName()
 	end
-	local newSource = string.format(scriptPlate, scriptName,
-		module:GetDebugId(), module.Source)
+	local newSource = string.format(scriptPlate, module:GetDebugId(), scriptName, module.Source)
 	local func, err = loadstring(newSource)
 	assert(func, err)
 	local env = getfenv(func)
@@ -112,6 +111,8 @@ local function getErrorTraceback(err, traceback)
 	local scriptName, lineNumber, debugId
 
 	if (string.find(err, GUID)) then
+		err = string.gsub(err, ".*%-%-" .. GUID, "")
+		debugId = string.gsub(err, GUID .. ".*", "")
 		err = string.gsub(err, ".*" .. GUID, "")
 		local nameString = string.gsub(err, "%.%.%.\"%]%:.*", "")
 		scriptName = nameString
@@ -119,13 +120,10 @@ local function getErrorTraceback(err, traceback)
 		numString = string.gsub(numString, "%:.*", "")
 		lineNumber = tonumber(numString) - 4
 		err = string.gsub(err, ".*%.%.%.\"%]%:%d*%:%s*", "")
-		debugId = string.sub(items[3], 3)
 	else
 		scriptName = string.gsub(items[2], ".*" .. GUID, "")
-		debugId = string.sub(items[3], 3)
-	end
-
-	if lineNumber == nil then
+		local debugIdString = string.gsub(items[2], ".*%-%-" .. GUID, "")
+		debugId = string.gsub(debugIdString, GUID .. ".*", "")
 		for index = 1, #items do
 			local item = items[index]
 			if (string.find(item, "Src.Util.DynamicRequire"))

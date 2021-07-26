@@ -13,8 +13,8 @@ local ComponentErrorReporter = require(main.Src.Util.ComponentErrorReporter)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local SelectWindow = require(main.Src.Components.SelectWindow)
 local Connection = require(main.Src.Components.Signal.Connection)
+local HeartbeatConnection = require(main.Src.Components.Signal.HeartbeatConnection)
 local getColor = require(main.Src.Util.getColor)
-local SyntaxError = require(main.Src.Util.SyntaxError)
 local t = require(main.Packages.t)
 
 local ViewWindow = Roact.PureComponent:extend("ViewWindow")
@@ -23,6 +23,7 @@ function ViewWindow:init()
 	self.targetRef = Roact.createRef()
 	self.handle = nil
 	self.ThirdPartyRoact = nil
+	self.nextUpdate = nil
 
 	self.state = {
 		connections = nil,
@@ -37,6 +38,17 @@ function ViewWindow:init()
 				Text = "Component closed.",
 				Time = 2,
 			})
+		end
+	end
+
+	self.onScriptUpdate = function()
+		self.nextUpdate = tick() + self.props.AutoRefreshDelay
+	end
+
+	self.update = function()
+		if self.nextUpdate and tick() > self.nextUpdate then
+			self.nextUpdate = nil
+			self.props.Reload()
 		end
 	end
 end
@@ -248,13 +260,12 @@ function ViewWindow:didUpdate(lastProps, lastState)
 end
 
 function ViewWindow:makeConnections()
-	local props = self.props
 	local connections = {}
 	local active = DynamicRequire.GetActiveModules()
 	for id, item in pairs(active) do
 		connections[id] = Roact.createElement(Connection, {
 			Signal = item.Module:GetPropertyChangedSignal("Source"),
-			Callback = props.Reload,
+			Callback = self.onScriptUpdate,
 		})
 	end
 	self:setState({
@@ -296,6 +307,10 @@ function ViewWindow:render()
 		}) or nil,
 
 		Connections = props.AutoRefresh and connections or nil,
+
+		Update = props.AutoRefresh and Roact.createElement(HeartbeatConnection, {
+			Update = self.update,
+		}),
 	})
 end
 
@@ -314,6 +329,7 @@ ViewWindow = RoactRodux.connect(function(state)
 		Root = state.ScriptTemplates.Root,
 		AlignCenter = state.PluginState.AlignCenter,
 		AutoRefresh = state.Settings.AutoRefresh,
+		AutoRefreshDelay = state.Settings.AutoRefreshDelay,
 		RootModule = state.PluginState.RootModule,
 		RoactInstall = state.PluginState.RoactInstall,
 		ReloadCode = state.PluginState.ReloadCode,

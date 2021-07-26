@@ -36,8 +36,23 @@ function SettingsMenu:init(initialProps)
 	assert(typecheck(initialProps))
 
 	self.createMenu = function(pluginMenu, plugin)
-		pluginMenu:AddMenu(self.createSettingsMenu(plugin))
-		return pluginMenu
+		--pluginMenu:AddMenu(self.createSettingsMenu(plugin))
+		return self.createSettingsMenu(plugin)
+	end
+
+	self.createDelayMenu = function(plugin, title)
+		local props = self.props
+		local subMenu = plugin:CreatePluginMenu(generateId() .. "Delay", "Delay")
+		subMenu.Name = "Delay"
+		subMenu.Title = "Auto Update Delay: " .. title
+		subMenu:AddNewAction(generateId() .. "DelayOff", "Off",
+			self:getCheckMark(props.AutoRefreshDelay == 0))
+		subMenu:AddNewAction(generateId() .. "Delay05", "0.5 sec",
+			self:getCheckMark(props.AutoRefreshDelay == 0.5))
+		subMenu:AddNewAction(generateId() .. "Delay1", "1.0 sec",
+			self:getCheckMark(props.AutoRefreshDelay == 1))
+		subMenu:AddNewAction(generateId() .. "DelayCustom", "Custom...")
+		return subMenu
 	end
 
 	self.createSettingsMenu = function(plugin)
@@ -47,6 +62,15 @@ function SettingsMenu:init(initialProps)
 		subMenu.Name = "Settings"
 		subMenu:AddNewAction(generateId() .. "AutoRefresh", "Auto Update",
 			self:getCheckMark(props.AutoRefresh))
+
+		local refreshDelay
+		if props.AutoRefreshDelay == 0 then
+			refreshDelay = "Off"
+		else
+			refreshDelay = string.format("%.1f", props.AutoRefreshDelay) .. " sec"
+		end
+		subMenu:AddMenu(self.createDelayMenu(plugin, refreshDelay))
+		subMenu:AddSeparator()
 		subMenu:AddNewAction(generateId() .. "ShowHelp", "Show Help",
 			self:getCheckMark(props.ShowHelp))
 		subMenu:AddNewAction(generateId() .. "MinimalAnimations", "Use Animations",
@@ -60,13 +84,17 @@ function SettingsMenu:init(initialProps)
 			if (string.find(item.ActionId, "ShowHelp")) then
 				props.SetShowHelp(not props.ShowHelp)
 			elseif (string.find(item.ActionId, "MinimalAnimations")) then
-				props.SetSetting({
-					MinimalAnimations = not props.MinimalAnimations
-				})
+				props.SetSetting({MinimalAnimations = not props.MinimalAnimations})
 			elseif (string.find(item.ActionId, "AutoRefresh")) then
-				props.SetSetting({
-					AutoRefresh = not props.AutoRefresh
-				})
+				props.SetSetting({AutoRefresh = not props.AutoRefresh})
+			elseif (string.find(item.ActionId, "DelayOff")) then
+				props.SetSetting({AutoRefreshDelay = 0})
+			elseif (string.find(item.ActionId, "Delay05")) then
+				props.SetSetting({AutoRefreshDelay = 0.5})
+			elseif (string.find(item.ActionId, "Delay1")) then
+				props.SetSetting({AutoRefreshDelay = 1})
+			elseif (string.find(item.ActionId, "DelayCustom")) then
+				print("Custom delay.")
 			end
 		end
 		self.props.OnClose()
@@ -83,6 +111,7 @@ end
 SettingsMenu = RoactRodux.connect(function(state)
 	return {
 		AutoRefresh = state.Settings.AutoRefresh,
+		AutoRefreshDelay = state.Settings.AutoRefreshDelay,
 		ShowHelp = state.Settings.ShowHelp,
 		MinimalAnimations = state.Settings.MinimalAnimations,
 		Theme = state.PluginState.Theme,

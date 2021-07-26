@@ -16,11 +16,13 @@ return function()
 		local props = state.ScriptTemplates.Props
 
 		if showHelp then
-			root.Source = string.format("%s\n\n%s", root.Source, ScriptTemplates.RootHelp.Source)
-			props.Source = string.format("%s\n\n%s", props.Source, ScriptTemplates.PropsHelp.Source)
+			local newRoot = string.gsub(root.Source, "\n*$", "")
+			root.Source = string.format("%s\n\n%s", newRoot, ScriptTemplates.RootHelp.Source)
+			local newProps = string.gsub(props.Source, "\n*$", "")
+			props.Source = string.format("%s\n\n%s", newProps, ScriptTemplates.PropsHelp.Source)
 		else
-			root.Source = string.gsub(root.Source, pattern, "", 1)
-			props.Source = string.gsub(props.Source, pattern, "", 1)
+			root.Source = string.gsub(root.Source, pattern .. "%s*", "", 1) .. "\n"
+			props.Source = string.gsub(props.Source, pattern .. "%s*", "", 1) .. "\n"
 		end
 	end
 end
