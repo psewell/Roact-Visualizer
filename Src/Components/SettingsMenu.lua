@@ -6,10 +6,12 @@ local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local PluginMenu = require(main.Src.Components.Base.PluginMenu)
+local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local generateId = require(main.Packages.generateId)
 
 local SetShowHelp = require(main.Src.Reducers.Settings.Thunks.SetShowHelp)
 local SetSetting = require(main.Src.Reducers.Settings.Actions.SetSetting)
+local SetInputAutoRefreshDelay = require(main.Src.Reducers.PluginState.Actions.SetInputAutoRefreshDelay)
 
 local SettingsMenu = Roact.PureComponent:extend("SettingsMenu")
 local t = require(main.Packages.t)
@@ -49,7 +51,7 @@ function SettingsMenu:init(initialProps)
 			self:getCheckMark(props.AutoRefreshDelay == 0))
 		subMenu:AddNewAction(generateId() .. "Delay05", "0.5 sec",
 			self:getCheckMark(props.AutoRefreshDelay == 0.5))
-		subMenu:AddNewAction(generateId() .. "Delay1", "1.0 sec",
+		subMenu:AddNewAction(generateId() .. "Delay1", "1 sec",
 			self:getCheckMark(props.AutoRefreshDelay == 1))
 		subMenu:AddNewAction(generateId() .. "DelayCustom", "Custom...")
 		return subMenu
@@ -67,7 +69,7 @@ function SettingsMenu:init(initialProps)
 		if props.AutoRefreshDelay == 0 then
 			refreshDelay = "Off"
 		else
-			refreshDelay = string.format("%.1f", props.AutoRefreshDelay) .. " sec"
+			refreshDelay = props.AutoRefreshDelay .. " sec"
 		end
 		subMenu:AddMenu(self.createDelayMenu(plugin, refreshDelay))
 		subMenu:AddSeparator()
@@ -87,14 +89,35 @@ function SettingsMenu:init(initialProps)
 				props.SetSetting({MinimalAnimations = not props.MinimalAnimations})
 			elseif (string.find(item.ActionId, "AutoRefresh")) then
 				props.SetSetting({AutoRefresh = not props.AutoRefresh})
+				self.props.SetMessage({
+					Type = "SetAutoUpdateEnabled",
+					Text = props.AutoRefresh and "Auto Update disabled."
+						or "Auto Update enabled.",
+					Time = 2,
+				})
 			elseif (string.find(item.ActionId, "DelayOff")) then
 				props.SetSetting({AutoRefreshDelay = 0})
+				self.props.SetMessage({
+					Type = "SetAutoUpdateDelay",
+					Text = "Auto Update delay set to 0 seconds.",
+					Time = 2,
+				})
 			elseif (string.find(item.ActionId, "Delay05")) then
 				props.SetSetting({AutoRefreshDelay = 0.5})
+				self.props.SetMessage({
+					Type = "SetAutoUpdateDelay",
+					Text = "Auto Update delay set to 0.5 seconds.",
+					Time = 2,
+				})
 			elseif (string.find(item.ActionId, "Delay1")) then
 				props.SetSetting({AutoRefreshDelay = 1})
+				self.props.SetMessage({
+					Type = "SetAutoUpdateDelay",
+					Text = "Auto Update delay set to 1 second.",
+					Time = 2,
+				})
 			elseif (string.find(item.ActionId, "DelayCustom")) then
-				print("Custom delay.")
+				props.InputAutoRefreshDelay()
 			end
 		end
 		self.props.OnClose()
@@ -124,6 +147,16 @@ end, function(dispatch)
 
 		SetSetting = function(settings)
 			dispatch(SetSetting(settings))
+		end,
+
+		InputAutoRefreshDelay = function()
+			dispatch(SetInputAutoRefreshDelay({
+				InputAutoRefreshDelay = true,
+			}))
+		end,
+
+		SetMessage = function(message)
+			dispatch(SetMessage(message))
 		end,
 	}
 end)(SettingsMenu)

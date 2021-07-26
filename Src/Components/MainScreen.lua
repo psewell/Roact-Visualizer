@@ -11,6 +11,7 @@ local BottomToolbar = require(main.Src.Components.BottomToolbar)
 local ViewWindow = require(main.Src.Components.ViewWindow)
 local ModuleSelector = require(main.Src.Components.ModuleSelector)
 local ToastMessage = require(main.Src.Components.ToastMessage)
+local InputAutoRefreshDelay = require(main.Src.Components.InputAutoRefreshDelay)
 
 local MainScreen = Roact.PureComponent:extend("MainScreen")
 
@@ -22,6 +23,7 @@ function MainScreen:render()
 		ViewWindow = Roact.createElement(ViewWindow),
 		ModuleSelector = Roact.createElement(ModuleSelector),
 		ToastMessage = Roact.createElement(ToastMessage),
+		InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
 	})
 end
 

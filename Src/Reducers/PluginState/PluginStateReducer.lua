@@ -10,6 +10,8 @@ local initialState = {
 	RoactInstall = nil,
 	ReloadCode = "",
 	AlignCenter = true,
+
+	InputAutoRefreshDelay = false,
 }
 
 local function registerActions()
