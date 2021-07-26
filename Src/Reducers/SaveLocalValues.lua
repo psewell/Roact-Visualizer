@@ -17,11 +17,28 @@ return function(plugin)
 		local state = store:getState()
 		local roact = state.PluginState.RoactInstall
 		local roactValue = values:FindFirstChild("RoactInstall")
-		if roactValue == nil then
+		if roact and roactValue == nil then
 			roactValue = Instance.new("ObjectValue")
 			roactValue.Name = "RoactInstall"
 			roactValue.Parent = values
+		elseif roact == nil and roactValue then
+			roactValue:Destroy()
 		end
-		roactValue.Value = roact
+		if roact then
+			roactValue.Value = roact
+		end
+
+		local rootModule = state.PluginState.RootModule
+		local rootModuleValue = values:FindFirstChild("RootModule")
+		if rootModule and rootModuleValue == nil then
+			rootModuleValue = Instance.new("ObjectValue")
+			rootModuleValue.Name = "RootModule"
+			rootModuleValue.Parent = values
+		elseif rootModule == nil and rootModuleValue then
+			rootModuleValue:Destroy()
+		end
+		if rootModule then
+			rootModuleValue.Value = rootModule
+		end
 	end
 end
