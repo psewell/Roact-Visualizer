@@ -21,9 +21,5 @@ return function(plugin)
 		store:dispatch(SetThemeConnection({
 			ThemeConnection = themeConnection,
 		}))
-
-		store:dispatch(SetRoactInstall({
-			RoactInstall = game.ReplicatedStorage.Packages.ThirdPartyRoact,
-		}))
 	end
 end

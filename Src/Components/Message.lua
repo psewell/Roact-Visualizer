@@ -34,7 +34,7 @@ local typecheck = t.interface({
 Message.defaultProps = {
 	VerticalAlignment = Enum.VerticalAlignment.Center,
 	TextXAlignment = Enum.TextXAlignment.Center,
-	ZIndex = 3,
+	ZIndex = 5,
 }
 
 local positions = {

@@ -1,10 +1,8 @@
 --[[
-	Used to select a RootModule.
+	Used to manually select Roact.
 ]]
 
-local StudioService = game:GetService("StudioService")
-
-local selectMessage = [[Select or drag a component's ModuleScript
+local selectMessage = [[Select or drag Roact
 from the Explorer]]
 
 local Selection = game:GetService("Selection")
@@ -14,15 +12,15 @@ local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local Connection = require(main.Src.Components.Signal.Connection)
-local HeartbeatConnection = require(main.Src.Components.Signal.HeartbeatConnection)
 local Message = require(main.Src.Components.Message)
+local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 
-local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
-local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSelectingModule)
+local SetRoactInstall = require(main.Src.Reducers.PluginState.Actions.SetRoactInstall)
+local SetSelectingRoact = require(main.Src.Reducers.PluginState.Actions.SetSelectingRoact)
 
-local ModuleSelector = Roact.PureComponent:extend("ModuleSelector")
+local RoactSelector = Roact.PureComponent:extend("RoactSelector")
 
-function ModuleSelector:init()
+function RoactSelector:init()
 	self.dragArea = Roact.createRef()
 	self.state = {
 		pluginGui = nil,
@@ -34,14 +32,15 @@ function ModuleSelector:init()
 		local items = Selection:Get()
 		local item = items[1]
 		if items[1] and items[1]:IsA("ModuleScript") and #items == 1 then
-			self.props.SetRootModule(item)
-		elseif StudioService.ActiveScript and StudioService.ActiveScript:IsA("ModuleScript") then
-			self.props.SetRootModule(StudioService.ActiveScript)
-		else
-			self.props.SetRootModule(nil)
+			self.props.SetRoactInstall(item)
+			self.props.SetMessage({
+				Type = "SelectedRoact",
+				Text = string.format("Found Roact at %s", items[1]:GetFullName()),
+				Time = 3,
+			})
+			Selection:Set({})
+			self.props.StopSelecting()
 		end
-		Selection:Set({})
-		self.props.StopSelecting()
 	end
 
 	self.onDragDropped = function(dragData)
@@ -52,8 +51,6 @@ function ModuleSelector:init()
 				if item.Name == dragData.Data then
 					self.setModule()
 				end
-			else
-				self.props.StopSelecting()
 			end
 		end
 	end
@@ -95,33 +92,24 @@ function ModuleSelector:init()
 				DragIcon = "rbxassetid://2254538897",
 				HotSpot = Vector2.new(-20, -20),
 			})
-		elseif StudioService.ActiveScript and StudioService.ActiveScript:IsA("ModuleScript") then
-			self:setState({
-				selectedObject = StudioService.ActiveScript,
-			})
 		else
 			self:setState({
 				selectedObject = Roact.None,
 			})
 		end
 	end
-
-	self.updateActiveScript = function()
-		if StudioService.ActiveScript == nil then
-			self.onSelectionChanged()
-		end
-	end
 end
 
-function ModuleSelector:didMount()
+function RoactSelector:didMount()
 	local dragArea = self.dragArea:getValue()
 	self:setState({
 		pluginGui = dragArea:FindFirstAncestorWhichIsA("PluginGui"),
 	})
+	self.onSelectionChanged()
 end
 
-function ModuleSelector:didUpdate(lastProps)
-	if self.props.SelectingModule and not lastProps.SelectingModule then
+function RoactSelector:didUpdate(lastProps)
+	if self.props.SelectingRoact and not lastProps.SelectingRoact then
 		self:setState({
 			dragObject = Roact.None,
 			selectedObject = Roact.None,
@@ -130,22 +118,17 @@ function ModuleSelector:didUpdate(lastProps)
 	end
 end
 
-function ModuleSelector:render()
+function RoactSelector:render()
 	local state = self.state
 	local pluginGui = state.pluginGui
 	local dragObject = state.dragObject
 	local selectedObject = state.selectedObject
 	local props = self.props
-	local selecting = props.SelectingModule
+	local selecting = props.SelectingRoact
 
-	local activeScript = StudioService.ActiveScript
 	local validSelectText
 	if selectedObject then
-		if activeScript == selectedObject then
-			validSelectText = string.format("Active Script:\n%s", selectedObject:GetFullName())
-		else
-			validSelectText = string.format("Current Selection:\n%s", selectedObject:GetFullName())
-		end
+		validSelectText = string.format("Current Selection:\n%s", selectedObject:GetFullName())
 	else
 		validSelectText = ""
 	end
@@ -177,25 +160,6 @@ function ModuleSelector:render()
 			SelectionConnection = selecting and Roact.createElement(Connection, {
 				Signal = Selection.SelectionChanged,
 				Callback = self.onSelectionChanged,
-			}),
-
-			ActiveScriptConnection = selecting and Roact.createElement(Connection, {
-				Signal = StudioService:GetPropertyChangedSignal("ActiveScript"),
-				Callback = self.onSelectionChanged,
-			}),
-
-			UpdateActiveScript = selecting and activeScript and Roact.createElement(HeartbeatConnection, {
-				Update = self.updateActiveScript,
-			}),
-
-			Cover = Roact.createElement("ImageButton", {
-				ZIndex = 4,
-				Size = UDim2.fromScale(1, 1),
-				ImageTransparency = 1,
-				BackgroundTransparency = 0.5,
-				BackgroundColor3 = Color3.new(),
-				AutoButtonColor = false,
-				[Roact.Event.Activated] = props.StopSelecting,
 			}),
 		}),
 
@@ -229,24 +193,28 @@ function ModuleSelector:render()
 	})
 end
 
-ModuleSelector = RoactRodux.connect(function(state)
+RoactSelector = RoactRodux.connect(function(state)
 	return {
-		SelectingModule = state.PluginState.SelectingModule,
+		SelectingRoact = state.PluginState.SelectingRoact,
 	}
 end, function(dispatch)
 	return {
-		SetRootModule = function(module)
-			dispatch(SetRootModule({
-				RootModule = module,
+		SetRoactInstall = function(module)
+			dispatch(SetRoactInstall({
+				RoactInstall = module,
 			}))
 		end,
 
 		StopSelecting = function()
-			dispatch(SetSelectingModule({
-				SelectingModule = false,
+			dispatch(SetSelectingRoact({
+				SelectingRoact = false,
 			}))
 		end,
-	}
-end)(ModuleSelector)
 
-return ModuleSelector
+		SetMessage = function(message)
+			dispatch(SetMessage(message))
+		end,
+	}
+end)(RoactSelector)
+
+return RoactSelector
