@@ -231,7 +231,8 @@ function ViewWindow:didUpdate(lastProps, lastState)
 	local props = self.props
 
 	if target ~= lastState.target or props.RootModule ~= lastProps.RootModule
-		or props.ReloadCode ~= lastProps.ReloadCode then
+		or props.ReloadCode ~= lastProps.ReloadCode
+		or (props.AutoRefresh and not lastProps.AutoRefresh) then
 
 		if self.ThirdPartyRoact == nil or props.RoactInstall ~= lastProps.RoactInstall then
 			self.ThirdPartyRoact = DynamicRequire.RequireStaticModule(props.RoactInstall)
@@ -310,6 +311,11 @@ function ViewWindow:render()
 
 		Update = props.AutoRefresh and Roact.createElement(HeartbeatConnection, {
 			Update = self.update,
+		}),
+
+		CheckAncestry = props.RootModule and Roact.createElement(Connection, {
+			Signal = props.RootModule.AncestryChanged,
+			Callback = self.closeModule,
 		}),
 	})
 end

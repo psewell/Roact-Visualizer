@@ -9,6 +9,9 @@ local SetRoactInstall = require(Actions.SetRoactInstall)
 
 return function(plugin)
 	return function(store)
+		store:dispatch(SetTheme({
+			Theme = settings().Studio.Theme,
+		}))
 		local themeConnection = settings().Studio.ThemeChanged:Connect(function()
 			store:dispatch(SetTheme({
 				Theme = settings().Studio.Theme,
