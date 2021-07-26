@@ -297,7 +297,6 @@ function ViewWindow:render()
 		ScrollBarImageColor3 = getColor(function(c)
 			return theme:GetColor(c.ScrollBar)
 		end),
-		[Roact.Ref] = self.targetRef,
 	}, {
 		SelectWindow = props.RootModule == nil
 			and Roact.createElement(SelectWindow) or nil,
@@ -306,6 +305,12 @@ function ViewWindow:render()
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}) or nil,
+
+		Target = Roact.createElement("Frame", {
+			BackgroundTransparency = 1,
+			AutomaticSize = Enum.AutomaticSize.XY,
+			[Roact.Ref] = self.targetRef,
+		}),
 
 		Connections = props.AutoRefresh and connections or nil,
 
