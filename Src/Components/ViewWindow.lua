@@ -338,7 +338,7 @@ ViewWindow = RoactRodux.connect(function(state)
 	return {
 		Props = state.ScriptTemplates.Props,
 		Root = state.ScriptTemplates.Root,
-		AlignCenter = state.PluginState.AlignCenter,
+		AlignCenter = state.Settings.AlignCenter,
 		AutoRefresh = state.Settings.AutoRefresh,
 		AutoRefreshDelay = state.Settings.AutoRefreshDelay,
 		RootModule = state.PluginState.RootModule,

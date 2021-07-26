@@ -23,6 +23,7 @@ local MainController = Roact.PureComponent:extend("MainController")
 local function createMiddlewares()
 	local middlewares = {
 		Rodux.thunkMiddleware,
+		--Rodux.loggerMiddleware,
 	}
 	return middlewares
 end

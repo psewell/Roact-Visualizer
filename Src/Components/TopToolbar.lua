@@ -19,7 +19,7 @@ local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local Reload = require(main.Src.Reducers.PluginState.Actions.Reload)
-local SetAlignCenter = require(main.Src.Reducers.PluginState.Actions.SetAlignCenter)
+local SetSetting = require(main.Src.Reducers.Settings.Actions.SetSetting)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local TextButton = require(main.Src.Components.TextButton)
 local SettingsMenu = require(main.Src.Components.SettingsMenu)
@@ -209,7 +209,7 @@ TopToolbar = RoactRodux.connect(function(state)
 	return {
 		Root = state.ScriptTemplates.Root,
 		Props = state.ScriptTemplates.Props,
-		AlignCenter = state.PluginState.AlignCenter,
+		AlignCenter = state.Settings.AlignCenter,
 		SelectingModule = state.PluginState.SelectingModule,
 		RootModule = state.PluginState.RootModule,
 		AutoRefresh = state.Settings.AutoRefresh,
@@ -222,7 +222,7 @@ end, function(dispatch)
 		end,
 
 		SetAlignCenter = function(alignCenter)
-			dispatch(SetAlignCenter({
+			dispatch(SetSetting({
 				AlignCenter = alignCenter,
 			}))
 		end,

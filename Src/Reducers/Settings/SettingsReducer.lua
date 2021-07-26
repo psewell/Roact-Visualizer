@@ -7,6 +7,7 @@ local initialState = {
 	AutoRefreshDelay = 1,
 	ShowHelp = true,
 	MinimalAnimations = false,
+	AlignCenter = true,
 }
 
 local function registerActions()

@@ -3,6 +3,8 @@
 ]]
 
 local main = script.Parent
+local LoadLocalValues = require(main.LoadLocalValues)
+local LoadGlobalValues = require(main.LoadGlobalValues)
 
 local initializeOrder = {
 	main.Settings,
@@ -12,6 +14,9 @@ local initializeOrder = {
 
 return function(plugin)
 	return function(store)
+		store:dispatch(LoadLocalValues())
+		store:dispatch(LoadGlobalValues(plugin))
+
 		local function initialize(folder)
 			local item = folder.Thunks.Initialize
 			local initializeThunk = require(item)

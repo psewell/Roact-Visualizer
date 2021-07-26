@@ -8,7 +8,6 @@ local initialState = {
 	ThemeConnection = nil,
 	RoactInstall = nil,
 	ReloadCode = "",
-	AlignCenter = true,
 
 	SelectingModule = false,
 	SelectingRoact = false,
