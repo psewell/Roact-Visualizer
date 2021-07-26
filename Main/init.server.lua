@@ -28,6 +28,7 @@ end
 
 Main.new()
 
+--[[
 -- Run tests if plugin is a child of workspace.
 -- This means it is being worked on.
 if script.Parent.Parent == workspace then
@@ -35,3 +36,4 @@ if script.Parent.Parent == workspace then
 		script.Parent.Src.Util,
 	})
 end
+]]

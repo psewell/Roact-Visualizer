@@ -3,6 +3,7 @@
 ]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
+local Cryo = require(main.Packages.Cryo)
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local DynamicRequire = require(main.Src.Util.DynamicRequire)
@@ -98,7 +99,7 @@ function ViewWindow:loadComponent(lastProps)
 			success = false
 		end)
 
-		local isValid = component and (typeof(component) == "function" or component.render ~= nil) or false
+		local isValid = component and (t.callback(component) or t.table(component)) or false
 
 		if not success or not isValid then
 			if success and not isValid then
@@ -143,22 +144,22 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 		return
 	end
 
-	local element = self.ThirdPartyRoact.createElement(component, propsResult)
-
 	local didLoadRoot, rootResult, rootCached
 	xpcall(function()
-		rootResult, rootCached = DynamicRequire.RequireWithCacheResult(rootScript, {
-			Roact = self.ThirdPartyRoact,
-			CurrentElement = element,
-		})
 		if not (moduleCached and propsCached) then
 			-- Force the root to update, there is an update ahead of us
+			rootCached = false
 			rootResult = DynamicRequire.ForceRequire(rootScript, {
 				Roact = self.ThirdPartyRoact,
-				CurrentElement = element,
+				component = component,
+			})
+		else
+			rootResult, rootCached = DynamicRequire.RequireWithCacheResult(rootScript, {
+				Roact = self.ThirdPartyRoact,
+				component = component,
 			})
 		end
-		if rootResult and rootResult.component ~= nil then
+		if rootResult then--and t.callback(rootResult) then
 			didLoadRoot = true
 		else
 			ComponentErrorReporter(string.format("Roact-Visualizer: Root script did not return a valid Roact tree."))
@@ -176,9 +177,20 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 		return
 	end
 
+	if moduleCached and propsCached and rootCached then
+		props.SetMessage({
+			Type = "NoChanges",
+			Text = "Component not updated: No changes detected.",
+			Time = 2,
+		})
+		return
+	end
+
 	local tree = self.ThirdPartyRoact.createElement(self.ThirdPartyRoact.Portal, {
 		target = target,
-	}, rootResult)
+	}, {
+		Root = self.ThirdPartyRoact.createElement(rootResult, Cryo.Dictionary.join(propsResult)),
+	})
 
 	local success, traceback, scriptInfo
 	xpcall(function()
@@ -195,13 +207,7 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 	end)
 
 	if success then
-		if moduleCached and propsCached and rootCached then
-			props.SetMessage({
-				Type = "NoChanges",
-				Text = "Component not updated: No changes detected.",
-				Time = 2,
-			})
-		elseif moduleCached and propsCached and not rootCached then
+		if moduleCached and propsCached and not rootCached then
 			props.SetMessage({
 				Type = "RootUpdated",
 				Text = "Root successfully updated.",
