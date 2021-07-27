@@ -14,6 +14,10 @@ local Cryo = require(main.Packages.Cryo)
 local DynamicRequire
 local modules = {}
 
+local function isEqual(str1, str2)
+	return str1 == str2
+end
+
 local function dynamicRequire(module, overrideRequire, overrideScript)
 	local scriptName
 	if string.find(module.Name, " %(Roact Visualizer%)") then
@@ -38,7 +42,7 @@ local function checkDependencies(id)
 		for dependencyId, dependencyModule in pairs(modules[id].Dependencies) do
 			if modules[dependencyId] == nil or dependencyModule == nil
 				or dependencyModule.Parent == nil or modules[dependencyId].IsDirty
-				or modules[dependencyId].Source ~= dependencyModule.Source then
+				or not isEqual(modules[dependencyId].Source, dependencyModule.Source) then
 				return true
 			end
 			local isDependencyDirty = checkDependencies(dependencyId)
@@ -67,7 +71,7 @@ local function dynamicRequireImpl(module, parentId, overrideScript, force, stati
 		modules[parentId].Dependencies[id] = module
 	end
 
-	if isDirty or modules[id].Source ~= src
+	if isDirty or not isEqual(modules[id].Source, src)
 		or (parentId == nil and force) then
 		-- This module has changed. We need to dynamically require it.
 		modules[id].Dependencies = {}

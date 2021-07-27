@@ -5,6 +5,7 @@
 local LOAD_GUID = "F3CA094D39E347D1BE40FD1279D2BA11"
 local DELETE_GUID = "FECF29FF44CF42D9BA6F0037B6D17D98"
 local SAVE_GUID = "DBC50B132F954D1BB7B27F91E9FBD5BE"
+local RESET_GUID = "4B4625166CAC4D568B7F4556380A46B7"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
@@ -18,6 +19,7 @@ local generateId = require(main.Packages.generateId)
 local SetSavingScript = require(main.Src.Reducers.PluginState.Actions.SetSavingScript)
 local SetDeletingScript = require(main.Src.Reducers.PluginState.Actions.SetDeletingScript)
 local LoadScript = require(main.Src.Reducers.ScriptTemplates.Thunks.LoadScript)
+local ResetScript = require(main.Src.Reducers.ScriptTemplates.Thunks.ResetScript)
 
 local ScriptLoadButton = Roact.PureComponent:extend("ScriptLoadButton")
 local t = require(main.Packages.t)
@@ -29,8 +31,13 @@ local typecheck = t.interface({
 	OnActivated = t.callback,
 })
 
-local displayNames = {
+local scriptTypes = {
 	RootScripts = "Root",
+	PropsScripts = "Props",
+}
+
+local displayNames = {
+	RootScripts = "Tree",
 	PropsScripts = "Props",
 }
 
@@ -69,6 +76,8 @@ function ScriptLoadButton:init(initialProps)
 	self.createMenu = function(pluginMenu, plugin)
 		local props = self.props
 		pluginMenu:AddNewAction(generateId() .. SAVE_GUID, "Save")
+		pluginMenu:AddSeparator()
+		pluginMenu:AddNewAction(generateId() .. RESET_GUID, "Reset")
 		if next(props.Scripts) ~= nil then
 			pluginMenu:AddSeparator()
 			for name, _ in pairs(props.Scripts) do
@@ -83,6 +92,13 @@ function ScriptLoadButton:init(initialProps)
 			local props = self.props
 			if (string.find(item.ActionId, SAVE_GUID)) then
 				props.SetSavingScript(props.Type)
+			elseif (string.find(item.ActionId, RESET_GUID)) then
+				props.ResetScript(props.Type)
+				props.SetMessage({
+					Type = "ResetScript",
+					Text = string.format([[Reset %s.]], displayNames[props.Type]),
+					Time = 2,
+				})
 			elseif (string.find(item.ActionId, LOAD_GUID)) then
 				local scriptName = string.gsub(item.ActionId, ".*" .. LOAD_GUID, "")
 				props.LoadScript(scriptName, props.Type)
@@ -90,7 +106,7 @@ function ScriptLoadButton:init(initialProps)
 				plugin:OpenScript(props.Module)
 				props.SetMessage({
 					Type = "LoadedScript",
-					Text = string.format([[Loaded %s script "%s".]], displayNames[props.Type], scriptName),
+					Text = string.format([[Loaded %s "%s".]], displayNames[props.Type], scriptName),
 					Time = 2,
 				})
 			elseif (string.find(item.ActionId, DELETE_GUID)) then
@@ -131,7 +147,7 @@ end
 
 ScriptLoadButton = RoactRodux.connect(function(state, props)
 	return {
-		Module = state.ScriptTemplates[displayNames[props.Type]],
+		Module = state.ScriptTemplates[scriptTypes[props.Type]],
 		Scripts = state.SavedScripts[props.Type],
 	}
 end, function(dispatch)
@@ -149,6 +165,12 @@ end, function(dispatch)
 		LoadScript = function(name, scriptType)
 			dispatch(LoadScript({
 				Name = name,
+				Container = scriptType,
+			}))
+		end,
+
+		ResetScript = function(scriptType)
+			dispatch(ResetScript({
 				Container = scriptType,
 			}))
 		end,

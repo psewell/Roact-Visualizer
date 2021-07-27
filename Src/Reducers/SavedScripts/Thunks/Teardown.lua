@@ -13,13 +13,19 @@ local containers = {
 	Root = "RootScripts",
 }
 
+local function trim(str)
+	local result = string.gsub(str, pattern .. "%s*", "", 1)
+	result = string.gsub(result, "%s*", "")
+	return result
+end
+
 return function()
 	return function(store)
 		local scriptTemplates = store:getState().ScriptTemplates
 		for name, module in pairs(scriptTemplates) do
 			local source = module.Source
-			source = string.gsub(source, pattern .. "%s*", "", 1)
-			local template = string.gsub(ScriptTemplates[name].Source, pattern .. "%s*", "", 1)
+			source = trim(source)
+			local template = trim(ScriptTemplates[name].Source)
 			local container = containers[name]
 			if source ~= template then
 				store:dispatch(SaveScript({

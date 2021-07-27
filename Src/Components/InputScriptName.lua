@@ -2,8 +2,8 @@
 	Used to input the name of a script being saved.
 ]]
 
-local inputMessage = [[Save current %s script as:]]
-local overwriteMessage = [[Overwrite script "%s"?]]
+local inputMessage = [[Save current %s as:]]
+local overwriteMessage = [[Overwrite %s "%s"?]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
@@ -19,7 +19,7 @@ local scriptTemplates = {
 	RootScripts = "Root",
 	PropsScripts = "Props",
 }
-local displayStrings = {
+local displayNames = {
 	RootScripts = "Tree",
 	PropsScripts = "Props",
 }
@@ -60,7 +60,7 @@ function InputScriptName:init()
 		})
 		props.SetMessage({
 			Type = "SavedScript",
-			Text = string.format("Saved script as %s.", text),
+			Text = string.format([[Saved %s "%s".]], displayNames[props.SavingScript], text),
 			Time = 2,
 		})
 		self:setState({
@@ -111,9 +111,9 @@ function InputScriptName:render()
 			InputMessage = not checkOverwrite and Roact.createElement(Message, {
 				ZIndex = 5,
 				Visible = true,
-				Text = string.format(inputMessage, displayStrings[props.SavingScript]),
+				Text = string.format(inputMessage, displayNames[props.SavingScript]),
 				TextBox = {
-					PlaceholderText = "New" .. displayStrings[props.SavingScript],
+					PlaceholderText = "New" .. displayNames[props.SavingScript],
 					Validate = self.validateText,
 					OnTextSubmitted = self.onTextSubmitted,
 				},
@@ -122,7 +122,7 @@ function InputScriptName:render()
 			OverrideMessage = checkOverwrite and Roact.createElement(Message, {
 				ZIndex = 5,
 				Visible = true,
-				Text = string.format(overwriteMessage, currentText),
+				Text = string.format(overwriteMessage, displayNames[props.SavingScript], currentText),
 				Buttons = {
 					{
 						Text = "Save",

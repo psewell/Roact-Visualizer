@@ -2,7 +2,7 @@
 	Used to confirm whether or not a script should be deleted.
 ]]
 
-local deleteMessage = [[Delete %s script "%s"?]]
+local deleteMessage = [[Delete %s "%s"?]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
@@ -29,7 +29,7 @@ function ConfirmDeleteScript:init()
 		})
 		props.SetMessage({
 			Type = "DeletedScript",
-			Text = string.format([[Deleted %s script "%s".]],
+			Text = string.format([[Deleted %s "%s".]],
 				displayStrings[props.DeletingScript.Type], props.DeletingScript.Name),
 			Time = 2,
 		})
