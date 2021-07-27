@@ -6,11 +6,11 @@ local LOAD_GUID = "F3CA094D39E347D1BE40FD1279D2BA11"
 local DELETE_GUID = "FECF29FF44CF42D9BA6F0037B6D17D98"
 local SAVE_GUID = "DBC50B132F954D1BB7B27F91E9FBD5BE"
 local RESET_GUID = "4B4625166CAC4D568B7F4556380A46B7"
+local OPEN_GUID = "68B1EAD1BF1F46F7BA97ED003BD7F4D3"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
-local PluginContext = require(main.Src.Contexts.PluginContext)
 local PluginMenu = require(main.Src.Components.Base.PluginMenu)
 local TextButton = require(main.Src.Components.TextButton)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
@@ -75,15 +75,17 @@ function ScriptLoadButton:init(initialProps)
 
 	self.createMenu = function(pluginMenu, plugin)
 		local props = self.props
+		pluginMenu:AddNewAction(generateId() .. OPEN_GUID, "Open")
 		pluginMenu:AddNewAction(generateId() .. SAVE_GUID, "Save")
 		pluginMenu:AddSeparator()
-		pluginMenu:AddNewAction(generateId() .. RESET_GUID, "Reset")
 		if next(props.Scripts) ~= nil then
 			pluginMenu:AddSeparator()
 			for name, _ in pairs(props.Scripts) do
 				pluginMenu:AddMenu(self.createScriptMenu(name, plugin))
 			end
 		end
+		pluginMenu:AddSeparator()
+		pluginMenu:AddNewAction(generateId() .. RESET_GUID, "Reset")
 		return pluginMenu
 	end
 
@@ -92,6 +94,8 @@ function ScriptLoadButton:init(initialProps)
 			local props = self.props
 			if (string.find(item.ActionId, SAVE_GUID)) then
 				props.SetSavingScript(props.Type)
+			elseif (string.find(item.ActionId, OPEN_GUID)) then
+				props.OnActivated()
 			elseif (string.find(item.ActionId, RESET_GUID)) then
 				props.ResetScript(props.Type)
 				props.SetMessage({
@@ -102,8 +106,6 @@ function ScriptLoadButton:init(initialProps)
 			elseif (string.find(item.ActionId, LOAD_GUID)) then
 				local scriptName = string.gsub(item.ActionId, ".*" .. LOAD_GUID, "")
 				props.LoadScript(scriptName, props.Type)
-				local plugin = PluginContext:get(self)
-				plugin:OpenScript(props.Module)
 				props.SetMessage({
 					Type = "LoadedScript",
 					Text = string.format([[Loaded %s "%s".]], displayNames[props.Type], scriptName),
