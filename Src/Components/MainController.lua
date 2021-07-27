@@ -97,7 +97,7 @@ function MainController:render()
 			Title = "Roact Visualizer",
 			Enabled = enabled,
 			Size = Vector2.new(640, 480),
-			MinSize = Vector2.new(200, 40),
+			MinSize = Vector2.new(164, 64),
 			InitialDockState = Enum.InitialDockState.Right,
 			OnClose = self.close,
 			ShouldRestore = true,

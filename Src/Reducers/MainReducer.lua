@@ -10,5 +10,6 @@ return Rodux.combineReducers({
 	PluginState = require(Reducers.PluginState.PluginStateReducer),
 	Message = require(Reducers.Message.MessageReducer),
 	ScriptTemplates = require(Reducers.ScriptTemplates.ScriptTemplatesReducer),
+	SavedScripts = require(Reducers.SavedScripts.SavedScriptsReducer),
 	Settings = require(Reducers.Settings.SettingsReducer),
 })

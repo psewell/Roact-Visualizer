@@ -95,10 +95,11 @@ function BottomToolbar:render()
 			Text = rootModule.Name,
 		})
 		local textWidth
-		if smallSize.X > (absoluteSize.X - 172) then
-			textWidth = absoluteSize.X - 172
+		local padding = 168
+		if smallSize.X > (absoluteSize.X - padding) then
+			textWidth = absoluteSize.X - padding
 			text = rootModule.Name
-		elseif largeSize.X > (absoluteSize.X - 172) then
+		elseif largeSize.X > (absoluteSize.X - padding) then
 			textWidth = smallSize.X
 			text = rootModule.Name
 		else
@@ -144,7 +145,7 @@ function BottomToolbar:render()
 
 		SelectButton = Roact.createElement(TextButton, {
 			LayoutOrder = 1,
-			Text = minified and "" or "Select",
+			Text = minified and "" or "New",
 			Icon = "rbxassetid://7148404429",
 			ImageSize = UDim2.fromOffset(20, 20),
 			ImageOffset = Vector2.new(0, 1),
@@ -153,9 +154,18 @@ function BottomToolbar:render()
 			OnActivated = props.StartSelecting,
 		}),
 
+		Separator = Roact.createElement("Frame", {
+			LayoutOrder = 2,
+			Size = UDim2.new(0, 1, 1, 0),
+			BorderSizePixel = 0,
+			BackgroundColor3 = getColor(function(c)
+				return theme:GetColor(c.Border)
+			end),
+		}),
+
 		OpenButton = Roact.createElement(TextButton, {
 			Text = "",
-			LayoutOrder = 2,
+			LayoutOrder = 3,
 			Icon = "rbxassetid://7148310413",
 			ImageSize = UDim2.fromOffset(20, 20),
 			ColorImage = true,
@@ -167,7 +177,7 @@ function BottomToolbar:render()
 		CurrentModule = rootModule and Roact.createElement("TextLabel", {
 			ZIndex = 0,
 			Size = textSize,
-			LayoutOrder = 3,
+			LayoutOrder = 4,
 			BackgroundTransparency = 1,
 		}, {
 			Text = Roact.createElement("TextLabel", {
@@ -199,7 +209,7 @@ function BottomToolbar:render()
 
 		CloseButton = Roact.createElement(TextButton, {
 			Text = "",
-			LayoutOrder = 4,
+			LayoutOrder = 5,
 			Icon = "rbxassetid://7148387208",
 			ImageSize = UDim2.fromOffset(20, 20),
 			ColorImage = true,

@@ -13,6 +13,8 @@ local ViewWindow = require(main.Src.Components.ViewWindow)
 local ModuleSelector = require(main.Src.Components.ModuleSelector)
 local ToastMessage = require(main.Src.Components.ToastMessage)
 local InputAutoRefreshDelay = require(main.Src.Components.InputAutoRefreshDelay)
+local InputScriptName = require(main.Src.Components.InputScriptName)
+local ConfirmDeleteScript = require(main.Src.Components.ConfirmDeleteScript)
 local RoactSelectHelper = require(main.Src.Components.RoactSelectHelper)
 
 local MainScreen = Roact.PureComponent:extend("MainScreen")
@@ -30,6 +32,8 @@ function MainScreen:render()
 			ViewWindow = Roact.createElement(ViewWindow),
 			ModuleSelector = Roact.createElement(ModuleSelector),
 			InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
+			InputScriptName = Roact.createElement(InputScriptName),
+			ConfirmDeleteScript = Roact.createElement(ConfirmDeleteScript),
 		}),
 	})
 end

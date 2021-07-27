@@ -15,14 +15,16 @@ return function()
 		local root = state.ScriptTemplates.Root
 		local props = state.ScriptTemplates.Props
 
+		local newRoot = string.gsub(root.Source, pattern .. "%s*", "", 1) .. "\n"
+		local newProps = string.gsub(props.Source, pattern .. "%s*", "", 1) .. "\n"
 		if showHelp then
-			local newRoot = string.gsub(root.Source, "\n*$", "")
+			newRoot = string.gsub(newRoot, "\n*$", "")
 			root.Source = string.format("%s\n\n%s", newRoot, ScriptTemplates.RootHelp.Source)
-			local newProps = string.gsub(props.Source, "\n*$", "")
+			newProps = string.gsub(newProps, "\n*$", "")
 			props.Source = string.format("%s\n\n%s", newProps, ScriptTemplates.PropsHelp.Source)
 		else
-			root.Source = string.gsub(root.Source, pattern .. "%s*", "", 1) .. "\n"
-			props.Source = string.gsub(props.Source, pattern .. "%s*", "", 1) .. "\n"
+			root.Source = newRoot
+			props.Source = newProps
 		end
 	end
 end

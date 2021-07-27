@@ -5,9 +5,14 @@
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local ServerStorage = game:GetService("ServerStorage")
 local LOCAL_KEY = "ROACT-VISUALIZER-VALUES"
+local scriptTypes = {
+	"RootScripts",
+	"PropsScripts",
+}
 
 local SetRoactInstall = require(main.Src.Reducers.PluginState.Actions.SetRoactInstall)
 local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
+local SaveScript = require(main.Src.Reducers.SavedScripts.Actions.SaveScript)
 
 return function(plugin)
 	return function(store)
@@ -33,6 +38,18 @@ return function(plugin)
 				store:dispatch(SetRootModule({
 					RootModule = root,
 				}))
+			end
+		end
+
+		for _, scriptType in ipairs(scriptTypes) do
+			if values:FindFirstChild(scriptType) then
+				for _, module in ipairs(values[scriptType]:GetChildren()) do
+					store:dispatch(SaveScript({
+						Name = module.Name,
+						Container = scriptType,
+						Script = module,
+					}))
+				end
 			end
 		end
 	end

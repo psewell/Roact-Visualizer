@@ -4,6 +4,10 @@
 
 local ServerStorage = game:GetService("ServerStorage")
 local LOCAL_KEY = "ROACT-VISUALIZER-VALUES"
+local scriptTypes = {
+	"RootScripts",
+	"PropsScripts",
+}
 
 return function(plugin)
 	return function(store)
@@ -39,6 +43,28 @@ return function(plugin)
 		end
 		if rootModule then
 			rootModuleValue.Value = rootModule
+		end
+
+		for _, scriptType in ipairs(scriptTypes) do
+			local scripts = state.SavedScripts[scriptType]
+			if next(scripts) then
+				local scriptContainer = values:FindFirstChild(scriptType)
+				if scriptContainer == nil then
+					scriptContainer = Instance.new("Folder")
+					scriptContainer.Name = scriptType
+					scriptContainer.Parent = values
+				else
+					scriptContainer:ClearAllChildren()
+				end
+				for name, source in pairs(scripts) do
+					local module = Instance.new("ModuleScript")
+					module.Name = name
+					module.Source = source
+					module.Parent = scriptContainer
+				end
+			elseif values:FindFirstChild(scriptType) then
+				values[scriptType]:Destroy()
+			end
 		end
 	end
 end

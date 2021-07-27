@@ -2,17 +2,19 @@
 	Toolbar controls at the top of the visualizer.
 ]]
 
-local function NOOP() end
+local noop = function() end
 
 local tooltips = {
 	Update = [[Update the current component to reflect the latest changes]],
-	Root = [[Edit the Roact tree above the current component]],
-	Props = [[Edit the props passed to the current component]],
+	Tree = [[Edit the Roact tree around the current component
+Right click for more options.]],
+	Props = [[Edit the props passed to the current component
+Right click for more options.]],
 	Center = [[Alignment: Centered]],
 	Actual = [[Alignment: Actual]],
-	Menu = [[Access settings and additional controls]],
+	Menu = [[Settings]],
 	Recording = [[Auto Update is actively polling script changes]],
-	NotRecording = [[Auto Update is not polling - no component is being displayed]],
+	NotRecording = [[Auto Update is paused - no active component]],
 }
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
@@ -22,31 +24,32 @@ local Reload = require(main.Src.Reducers.PluginState.Actions.Reload)
 local SetSetting = require(main.Src.Reducers.Settings.Actions.SetSetting)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local TextButton = require(main.Src.Components.TextButton)
-local SettingsMenu = require(main.Src.Components.SettingsMenu)
+local SettingsButton = require(main.Src.Components.SettingsButton)
+local ScriptLoadButton = require(main.Src.Components.ScriptLoadButton)
+local Connection = require(main.Src.Components.Signal.Connection)
 local PluginContext = require(main.Src.Contexts.PluginContext)
 local getColor = require(main.Src.Util.getColor)
 
 local TopToolbar = Roact.PureComponent:extend("TopToolbar")
-local t = require(main.Packages.t)
-local typecheck = t.interface({
-	Minified = t.optional(t.boolean),
-})
 
-TopToolbar.defaultProps = {
-	Minified = false,
-}
-
-function TopToolbar:init(props)
-	assert(typecheck(props))
+function TopToolbar:init()
+	self.targetRef = Roact.createRef()
 	self.state = {
-		showMenu = false,
+		pluginGui = nil,
+		absoluteSize = Vector2.new(),
 	}
+
+	self.sizeChanged = function(size)
+		self:setState({
+			absoluteSize = size or self.state.pluginGui.AbsoluteSize
+		})
+	end
 
 	self.toggleAlignment = function()
 		self.props.SetAlignCenter(not self.props.AlignCenter)
 	end
 
-	self.openRoot = function()
+	self.openTree = function()
 		local plugin = PluginContext:get(self)
 		plugin:OpenScript(self.props.Root)
 		self.props.SetMessage({
@@ -65,30 +68,29 @@ function TopToolbar:init(props)
 			Time = 2,
 		})
 	end
+end
 
-	self.showMenu = function()
-		self:setState({
-			showMenu = true,
-		})
-	end
-
-	self.hideMenu = function()
-		self:setState({
-			showMenu = false,
-		})
-	end
+function TopToolbar:didMount()
+	local target = self.targetRef:getValue()
+	local pluginGui = target:FindFirstAncestorWhichIsA("PluginGui")
+	self:setState({
+		pluginGui = pluginGui,
+	})
+	self.sizeChanged(pluginGui.AbsoluteSize)
 end
 
 function TopToolbar:render()
 	local props = self.props
 	local theme = props.Theme
-	local minified = props.Minified
 	local selecting = props.SelectingModule
 	local center = props.AlignCenter
 	local rootModule = props.RootModule
 
 	local state = self.state
-	local showMenu = state.showMenu
+	local pluginGui = state.pluginGui
+	local absoluteSize = state.absoluteSize
+	local minified = absoluteSize.X < 288
+	local minifyUpdate = absoluteSize.X < 215
 
 	return Roact.createElement("Frame", {
 		ZIndex = 3,
@@ -100,16 +102,18 @@ function TopToolbar:render()
 			return theme:GetColor(c.Border)
 		end),
 		BorderSizePixel = 2,
+		[Roact.Ref] = self.targetRef,
 	}, {
+		SizeChanged = pluginGui and Roact.createElement(Connection, {
+			Signal = pluginGui:GetPropertyChangedSignal("AbsoluteSize"),
+			Callback = self.sizeChanged,
+		}),
+
 		Padding = Roact.createElement("UIPadding", {
 			PaddingTop = UDim.new(0, 2),
 			PaddingBottom = UDim.new(0, 2),
 			PaddingLeft = UDim.new(0, 4),
 			PaddingRight = UDim.new(0, 4),
-		}),
-
-		Menu = showMenu and Roact.createElement(SettingsMenu, {
-			OnClose = self.hideMenu,
 		}),
 
 		AlignLeft = Roact.createElement("Frame", {
@@ -126,7 +130,7 @@ function TopToolbar:render()
 
 			RefreshButton = not props.AutoRefresh and Roact.createElement(TextButton, {
 				LayoutOrder = 1,
-				Text = minified and "" or "Update",
+				Text = minifyUpdate and "" or "Update",
 				Icon = "rbxassetid://7148367326",
 				ImageSize = UDim2.fromOffset(20, 20),
 				ImageOffset = Vector2.new(0, 1),
@@ -138,34 +142,40 @@ function TopToolbar:render()
 
 			AutoRefresh = props.AutoRefresh and Roact.createElement(TextButton, {
 				LayoutOrder = 1,
-				Text = minified and "" or "Auto",
-				Icon = rootModule and "rbxassetid://7152317618" or "rbxassetid://7152324797",
+				Text = minifyUpdate and "" or "Auto",
+				AutoButtonColor = false,
+				Icon = rootModule ~= nil and "rbxassetid://7152317618" or "rbxassetid://7152324797",
 				ImageSize = UDim2.fromOffset(20, 20),
-				ColorImage = true,
-				Tooltip = rootModule and tooltips.Recording or tooltips.NotRecording,
-				OnActivated = NOOP,
-				Enabled = false,
+				ColorImage = rootModule == nil,
+				Tooltip = rootModule ~= nil and tooltips.Recording or tooltips.NotRecording,
+				OnActivated = noop,
+				Enabled = rootModule ~= nil,
 			}) or nil,
 
-			Root = Roact.createElement(TextButton, {
+			Separator = Roact.createElement("Frame", {
 				LayoutOrder = 2,
-				Text = minified and "" or "Root",
-				Icon = "rbxassetid://7148430029",
-				ImageSize = UDim2.fromOffset(20, 20),
-				ImageOffset = Vector2.new(0, 1),
-				ColorImage = true,
-				Tooltip = tooltips.Root,
-				OnActivated = self.openRoot,
+				Size = UDim2.new(0, 1, 1, 0),
+				BorderSizePixel = 0,
+				BackgroundColor3 = getColor(function(c)
+					return theme:GetColor(c.Border)
+				end),
 			}),
 
-			Props = Roact.createElement(TextButton, {
+			Tree = Roact.createElement(ScriptLoadButton, {
 				LayoutOrder = 3,
+				Text = minified and "" or "Tree",
+				Icon = "rbxassetid://7148430029",
+				Tooltip = tooltips.Tree,
+				Type = "RootScripts",
+				OnActivated = self.openTree,
+			}),
+
+			Props = Roact.createElement(ScriptLoadButton, {
+				LayoutOrder = 4,
 				Text = minified and "" or "Props",
 				Icon = "rbxassetid://7148440849",
-				ImageSize = UDim2.fromOffset(20, 20),
-				ImageOffset = Vector2.new(0, 2),
-				ColorImage = true,
 				Tooltip = tooltips.Props,
+				Type = "PropsScripts",
 				OnActivated = self.openProps,
 			}),
 		}),
@@ -184,22 +194,26 @@ function TopToolbar:render()
 
 			Alignment = Roact.createElement(TextButton, {
 				LayoutOrder = 1,
-				Text = "",
-				Icon = center and "rbxassetid://7143578269" or "rbxassetid://7143578075",
+				Text = "",--center and "Centered" or "Actual",
+				Icon = center and "rbxassetid://7157728506" or "rbxassetid://7143578075",
 				ImageSize = UDim2.fromOffset(20, 20),
 				ColorImage = true,
 				Tooltip = not selecting and (center and tooltips.Center or tooltips.Actual) or nil,
 				OnActivated = self.toggleAlignment,
 			}),
 
-			Menu = Roact.createElement(TextButton, {
+			Separator = Roact.createElement("Frame", {
 				LayoutOrder = 2,
-				Text = "",
-				Icon = "rbxassetid://7149201173",
-				ImageSize = UDim2.fromOffset(20, 20),
-				ColorImage = true,
+				Size = UDim2.new(0, 1, 1, 0),
+				BorderSizePixel = 0,
+				BackgroundColor3 = getColor(function(c)
+					return theme:GetColor(c.Border)
+				end),
+			}),
+
+			Menu = Roact.createElement(SettingsButton, {
+				LayoutOrder = 3,
 				Tooltip = tooltips.Menu,
-				OnActivated = self.showMenu,
 			}),
 		}),
 	})
@@ -229,6 +243,10 @@ end, function(dispatch)
 
 		SetMessage = function(message)
 			dispatch(SetMessage(message))
+		end,
+
+		SetSetting = function(settings)
+			dispatch(SetSetting(settings))
 		end,
 	}
 end)(TopToolbar)

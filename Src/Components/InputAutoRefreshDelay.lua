@@ -21,15 +21,15 @@ function InputAutoRefreshDelay:init()
 	end
 
 	self.onTextSubmitted = function(text)
+		self.props.StopInput()
 		if text then
 			self.props.SetDelay(tonumber(text))
 			self.props.SetMessage({
 				Type = "SetAutoUpdateDelay",
 				Text = string.format("Auto Update delay set to %s second%s.", text, text == "1" and "" or "s"),
-				Time = 2,
+				Time = 3,
 			})
 		end
-		self.props.StopInput()
 	end
 end
 

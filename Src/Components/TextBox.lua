@@ -33,7 +33,7 @@ function TextBox:init(props)
 	assert(typecheck(props))
 	self.textBox = Roact.createRef()
 	self.state = {
-		textIsValid = true,
+		textIsValid = false,
 		focused = false,
 	}
 
@@ -70,8 +70,11 @@ function TextBox:didMount()
 	if self.props.InitialText then
 		textBox.Text = self.props.InitialText
 	end
+	self.onTextChanged(textBox)
 	if self.props.CaptureFocus then
-		textBox:CaptureFocus()
+		task.defer(function()
+			textBox:CaptureFocus()
+		end)
 	end
 end
 

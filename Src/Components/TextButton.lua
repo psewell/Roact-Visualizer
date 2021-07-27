@@ -14,6 +14,7 @@ local t = require(main.Packages.t)
 local typecheck = t.interface({
 	Text = t.optional(t.string),
 	OnActivated = t.callback,
+	OnRightClick = t.optional(t.callback),
 	Icon = t.optional(t.string),
 	Default = t.optional(t.boolean),
 	LayoutOrder = t.optional(t.integer),
@@ -24,6 +25,7 @@ local typecheck = t.interface({
 	AnchorPoint = t.optional(t.Vector2),
 	ColorImage = t.optional(t.boolean),
 	Enabled = t.optional(t.boolean),
+	AutoButtonColor = t.optional(t.boolean),
 })
 
 TextButton.defaultProps = {
@@ -34,6 +36,7 @@ TextButton.defaultProps = {
 	ImageSize = UDim2.fromOffset(18, 18),
 	ColorImage = false,
 	Enabled = true,
+	AutoButtonColor = true,
 }
 
 function TextButton:init(props)
@@ -46,6 +49,7 @@ function TextButton:render()
 	local default = props.Default
 	local tooltip = props.Tooltip
 	local enabled = props.Enabled
+	local autoColor = props.AutoButtonColor
 
 	local textSize = GetTextSize({
 		Font = Enum.Font.SourceSans,
@@ -67,7 +71,7 @@ function TextButton:render()
 		AnchorPoint = props.AnchorPoint,
 		TextSize = 18,
 		Text = props.Text,
-		AutoButtonColor = enabled,
+		AutoButtonColor = autoColor and enabled,
 		BackgroundColor3 = getColor(function(c, m)
 			return default and theme:GetColor(c.DialogMainButton, not enabled and m.Disabled or nil)
 				or theme:GetColor(c.Button, not enabled and m.Disabled or nil)
@@ -77,6 +81,7 @@ function TextButton:render()
 				or theme:GetColor(c.ButtonText, not enabled and m.Disabled or nil)
 		end),
 		[Roact.Event.Activated] = props.OnActivated,
+		[Roact.Event.MouseButton2Click] = props.OnRightClick,
 	}, {
 		Corner = Roact.createElement("UICorner", {
 			CornerRadius = UDim.new(0, 4),

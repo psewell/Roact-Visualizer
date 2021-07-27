@@ -8,15 +8,9 @@
 	-- Providing a Roact Context
 	return Roact.createElement(MyContext.Provider, {
 		value = myContextValue,
-	}, Roact.createElement(component, props)}))
+	}, Roact.createElement(component, props))
 
-	-- White background
-	return Roact.createElement("Frame", {
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.new(1, 1, 1),
-	}, Roact.createElement(component, props)))
-
-	-- Preview in 3D window
+	-- Retargeting to 3D window
 	return Roact.createElement(Roact.Portal, {
 		target = game.StarterGui,
 	}, {

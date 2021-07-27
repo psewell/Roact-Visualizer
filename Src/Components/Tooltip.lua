@@ -28,7 +28,7 @@ local typecheck = t.interface({
 })
 
 Tooltip.defaultProps = {
-	MaxWidth = 200,
+	MaxWidth = 164,
 	ShowDelay = 0.25,
 	Enabled = true,
 	ZIndex = 10,

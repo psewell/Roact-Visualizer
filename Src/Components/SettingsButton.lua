@@ -6,6 +6,7 @@ local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local PluginMenu = require(main.Src.Components.Base.PluginMenu)
+local TextButton = require(main.Src.Components.TextButton)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local generateId = require(main.Packages.generateId)
 
@@ -13,13 +14,18 @@ local SetShowHelp = require(main.Src.Reducers.Settings.Thunks.SetShowHelp)
 local SetSetting = require(main.Src.Reducers.Settings.Actions.SetSetting)
 local SetInputAutoRefreshDelay = require(main.Src.Reducers.PluginState.Actions.SetInputAutoRefreshDelay)
 
-local SettingsMenu = Roact.PureComponent:extend("SettingsMenu")
+local SettingsButton = Roact.PureComponent:extend("SettingsButton")
 local t = require(main.Packages.t)
 local typecheck = t.interface({
-	OnClose = t.callback,
+	LayoutOrder = t.integer,
+	Tooltip = t.string,
 })
 
-function SettingsMenu:getCheckMark(condition)
+SettingsButton.defaultProps = {
+	LayoutOrder = 1,
+}
+
+function SettingsButton:getCheckMark(condition)
 	if not condition then
 		return nil
 	end
@@ -34,12 +40,22 @@ function SettingsMenu:getCheckMark(condition)
 	end
 end
 
-function SettingsMenu:init(initialProps)
+function SettingsButton:init(initialProps)
 	assert(typecheck(initialProps))
+	self.state = {
+		showMenu = false,
+	}
 
-	self.createMenu = function(pluginMenu, plugin)
-		--pluginMenu:AddMenu(self.createSettingsMenu(plugin))
-		return self.createSettingsMenu(plugin)
+	self.showMenu = function()
+		self:setState({
+			showMenu = true,
+		})
+	end
+
+	self.hideMenu = function()
+		self:setState({
+			showMenu = false,
+		})
 	end
 
 	self.createDelayMenu = function(plugin, title)
@@ -57,27 +73,23 @@ function SettingsMenu:init(initialProps)
 		return subMenu
 	end
 
-	self.createSettingsMenu = function(plugin)
+	self.createMenu = function(pluginMenu, plugin)
 		local props = self.props
-		local subMenu = plugin:CreatePluginMenu(generateId() .. "Settings", "Settings",
-			"rbxassetid://413362914")
-		subMenu.Name = "Settings"
-		subMenu:AddNewAction(generateId() .. "AutoRefresh", "Auto Update",
+		pluginMenu:AddNewAction(generateId() .. "AutoRefresh", "Auto Update",
 			self:getCheckMark(props.AutoRefresh))
-
 		local refreshDelay
 		if props.AutoRefreshDelay == 0 then
 			refreshDelay = "Off"
 		else
 			refreshDelay = props.AutoRefreshDelay .. " sec"
 		end
-		subMenu:AddMenu(self.createDelayMenu(plugin, refreshDelay))
-		subMenu:AddSeparator()
-		subMenu:AddNewAction(generateId() .. "ShowHelp", "Show Help",
+		pluginMenu:AddMenu(self.createDelayMenu(plugin, refreshDelay))
+		pluginMenu:AddSeparator()
+		pluginMenu:AddNewAction(generateId() .. "ShowHelp", "Show Help",
 			self:getCheckMark(props.ShowHelp))
-		subMenu:AddNewAction(generateId() .. "MinimalAnimations", "Use Animations",
+		pluginMenu:AddNewAction(generateId() .. "MinimalAnimations", "Use Animations",
 			self:getCheckMark(not props.MinimalAnimations))
-		return subMenu
+		return pluginMenu
 	end
 
 	self.onItemSelected = function(item)
@@ -88,7 +100,9 @@ function SettingsMenu:init(initialProps)
 			elseif (string.find(item.ActionId, "MinimalAnimations")) then
 				props.SetSetting({MinimalAnimations = not props.MinimalAnimations})
 			elseif (string.find(item.ActionId, "AutoRefresh")) then
-				props.SetSetting({AutoRefresh = not props.AutoRefresh})
+				props.SetSetting({
+					AutoRefresh = not props.AutoRefresh,
+				})
 				self.props.SetMessage({
 					Type = "SetAutoUpdateEnabled",
 					Text = props.AutoRefresh and "Auto Update disabled."
@@ -120,18 +134,34 @@ function SettingsMenu:init(initialProps)
 				props.InputAutoRefreshDelay()
 			end
 		end
-		self.props.OnClose()
+		self.hideMenu()
 	end
 end
 
-function SettingsMenu:render()
-	return Roact.createElement(PluginMenu, {
-		CreateMenu = self.createMenu,
-		OnItemSelected = self.onItemSelected,
+function SettingsButton:render()
+	local state = self.state
+	local props = self.props
+	local showMenu = state.showMenu
+
+	return Roact.createFragment({
+		Button = Roact.createElement(TextButton, {
+			LayoutOrder = props.LayoutOrder,
+			Text = "",
+			Icon = "rbxassetid://7157376255",
+			ImageSize = UDim2.fromOffset(20, 20),
+			ColorImage = true,
+			Tooltip = props.Tooltip,
+			OnActivated = self.showMenu,
+		}),
+
+		Menu = showMenu and Roact.createElement(PluginMenu, {
+			CreateMenu = self.createMenu,
+			OnItemSelected = self.onItemSelected,
+		}),
 	})
 end
 
-SettingsMenu = RoactRodux.connect(function(state)
+SettingsButton = RoactRodux.connect(function(state)
 	return {
 		AutoRefresh = state.Settings.AutoRefresh,
 		AutoRefreshDelay = state.Settings.AutoRefreshDelay,
@@ -159,6 +189,6 @@ end, function(dispatch)
 			dispatch(SetMessage(message))
 		end,
 	}
-end)(SettingsMenu)
+end)(SettingsButton)
 
-return SettingsMenu
+return SettingsButton

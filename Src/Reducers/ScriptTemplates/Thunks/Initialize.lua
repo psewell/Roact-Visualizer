@@ -15,7 +15,7 @@ local ScriptTemplates = main.Src.ScriptTemplates
 return function()
 	return function(store)
 		local root = ScriptTemplates.Root:Clone()
-		root.Name = "Root (Roact Visualizer)"
+		root.Name = "Tree (Roact Visualizer)"
 		root.Parent = PluginGuiService:FindFirstChild("Roact Visualizer")
 		store:dispatch(SetRoot({
 			Root = root,

@@ -25,6 +25,7 @@ function ViewWindow:init()
 	self.handle = nil
 	self.ThirdPartyRoact = nil
 	self.nextUpdate = nil
+	self.contentsSize, self.updateContentsSize = Roact.createBinding(Vector2.new())
 
 	self.state = {
 		connections = nil,
@@ -51,6 +52,10 @@ function ViewWindow:init()
 			self.nextUpdate = nil
 			self.props.Reload()
 		end
+	end
+
+	self.contentsSizeChanged = function(rbx)
+		self.updateContentsSize(rbx.AbsoluteSize)
 	end
 end
 
@@ -237,8 +242,7 @@ function ViewWindow:didUpdate(lastProps, lastState)
 	local props = self.props
 
 	if target ~= lastState.target or props.RootModule ~= lastProps.RootModule
-		or props.ReloadCode ~= lastProps.ReloadCode
-		or (props.AutoRefresh and not lastProps.AutoRefresh) then
+		or props.ReloadCode ~= lastProps.ReloadCode then
 
 		if self.ThirdPartyRoact == nil or props.RoactInstall ~= lastProps.RoactInstall then
 			self.ThirdPartyRoact = DynamicRequire.RequireStaticModule(props.RoactInstall)
@@ -297,11 +301,12 @@ function ViewWindow:render()
 		Size = UDim2.new(1, -8, 1, -68),
 		Position = UDim2.new(0, 4, 1, -34),
 		AnchorPoint = Vector2.new(0, 1),
-		CanvasSize = UDim2.new(1, -8, 1, -68),
-		AutomaticCanvasSize = Enum.AutomaticSize.XY,
+		CanvasSize = self.contentsSize:map(function(value)
+			return UDim2.fromOffset(value.X, value.Y)
+		end),
 		ScrollBarThickness = 6,
 		ScrollBarImageColor3 = getColor(function(c)
-			return theme:GetColor(c.ScrollBar)
+			return theme:GetColor(c.DimmedText)
 		end),
 	}, {
 		SelectWindow = props.RootModule == nil
@@ -315,6 +320,7 @@ function ViewWindow:render()
 		Target = Roact.createElement("Frame", {
 			BackgroundTransparency = 1,
 			AutomaticSize = Enum.AutomaticSize.XY,
+			[Roact.Change.AbsoluteSize] = self.contentsSizeChanged,
 			[Roact.Ref] = self.targetRef,
 		}),
 
@@ -350,7 +356,6 @@ ViewWindow = RoactRodux.connect(function(state)
 		RootModule = state.PluginState.RootModule,
 		RoactInstall = state.PluginState.RoactInstall,
 		ReloadCode = state.PluginState.ReloadCode,
-		Recording = state.PluginState.Recording,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)

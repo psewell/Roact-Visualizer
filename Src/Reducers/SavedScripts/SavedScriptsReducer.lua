@@ -3,17 +3,8 @@ local Rodux = require(main.Packages.Rodux)
 
 local Actions = script.Parent.Actions
 local initialState = {
-	RootModule = nil,
-	Theme = settings().Studio.Theme,
-	ThemeConnection = nil,
-	RoactInstall = nil,
-	ReloadCode = "",
-
-	SelectingModule = false,
-	SelectingRoact = false,
-	InputAutoRefreshDelay = false,
-	SavingScript = nil,
-	DeletingScript = nil,
+	PropsScripts = {},
+	RootScripts = {},
 }
 
 local function registerActions()
