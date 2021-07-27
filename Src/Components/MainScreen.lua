@@ -16,6 +16,7 @@ local InputAutoRefreshDelay = require(main.Src.Components.InputAutoRefreshDelay)
 local InputScriptName = require(main.Src.Components.InputScriptName)
 local ConfirmDeleteScript = require(main.Src.Components.ConfirmDeleteScript)
 local RoactSelectHelper = require(main.Src.Components.RoactSelectHelper)
+local ConfirmStartupState = require(main.Src.Components.ConfirmStartupState)
 
 local MainScreen = Roact.PureComponent:extend("MainScreen")
 
@@ -34,6 +35,7 @@ function MainScreen:render()
 			InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
 			InputScriptName = Roact.createElement(InputScriptName),
 			ConfirmDeleteScript = Roact.createElement(ConfirmDeleteScript),
+			ConfirmStartupState = Roact.createElement(ConfirmStartupState),
 		}),
 	})
 end

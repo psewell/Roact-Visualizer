@@ -1,8 +1,6 @@
 --[[
-	Saves a script.
+	Sets the startup state, which can be accepted or rejected.
 ]]
-
-local pattern = "%s*%-%-%[%[HELP.*HELP%]%]"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Action = require(main.Packages.Action)
@@ -10,9 +8,9 @@ local Cryo = require(main.Packages.Cryo)
 local t = require(main.Packages.t)
 
 local typecheck = t.interface({
-	Name = t.string,
-	Container = t.literal("RootScripts", "PropsScripts"),
-	Script = t.instanceIsA("ModuleScript"),
+	RootModule = t.optional(t.instanceIsA("ModuleScript")),
+	PropsScripts = t.optional(t.instanceIsA("ModuleScript")),
+	RootScripts = t.optional(t.instanceIsA("ModuleScript")),
 })
 
 local function create(props)
@@ -21,14 +19,12 @@ local function create(props)
 end
 
 local function reduce(state, action)
-	local source = action.Script.Source
-	local container = action.Container
-	source = string.gsub(source, pattern .. "%s*", "", 1)
-
 	return Cryo.Dictionary.join(state, {
-		[container] = Cryo.Dictionary.join(state[container], {
-			[action.Name] = source,
-		}),
+		StartupState = {
+			RootModule = action.RootModule,
+			PropsScripts = action.PropsScripts,
+			RootScripts = action.RootScripts,
+		},
 	})
 end
 

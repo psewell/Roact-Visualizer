@@ -4,6 +4,7 @@
 
 local LOAD_GUID = "F3CA094D39E347D1BE40FD1279D2BA11"
 local DELETE_GUID = "FECF29FF44CF42D9BA6F0037B6D17D98"
+local SAVE_GUID = "DBC50B132F954D1BB7B27F91E9FBD5BE"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
@@ -67,7 +68,7 @@ function ScriptLoadButton:init(initialProps)
 
 	self.createMenu = function(pluginMenu, plugin)
 		local props = self.props
-		pluginMenu:AddNewAction(generateId() .. "Save", "Save")
+		pluginMenu:AddNewAction(generateId() .. SAVE_GUID, "Save")
 		if next(props.Scripts) ~= nil then
 			pluginMenu:AddSeparator()
 			for name, _ in pairs(props.Scripts) do
@@ -80,7 +81,7 @@ function ScriptLoadButton:init(initialProps)
 	self.onItemSelected = function(item)
 		if item then
 			local props = self.props
-			if (string.find(item.ActionId, "Save$")) then
+			if (string.find(item.ActionId, SAVE_GUID)) then
 				props.SetSavingScript(props.Type)
 			elseif (string.find(item.ActionId, LOAD_GUID)) then
 				local scriptName = string.gsub(item.ActionId, ".*" .. LOAD_GUID, "")

@@ -11,7 +11,7 @@ local scriptTypes = {
 }
 
 local SetRoactInstall = require(main.Src.Reducers.PluginState.Actions.SetRoactInstall)
-local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
+local SetStartupState = require(main.Src.Reducers.PluginState.Actions.SetStartupState)
 local SaveScript = require(main.Src.Reducers.SavedScripts.Actions.SaveScript)
 
 return function(plugin)
@@ -31,19 +31,21 @@ return function(plugin)
 			end
 		end
 
+		local startupState = {}
 		local rootModule = values:FindFirstChild("RootModule")
 		if rootModule and rootModule.Value then
 			local root = rootModule.Value
 			if root.Parent ~= nil and root:IsA("ModuleScript") then
-				store:dispatch(SetRootModule({
-					RootModule = root,
-				}))
+				startupState.RootModule = root
 			end
 		end
 
 		for _, scriptType in ipairs(scriptTypes) do
 			if values:FindFirstChild(scriptType) then
 				for _, module in ipairs(values[scriptType]:GetChildren()) do
+					if module.Name == "AutoSave" then
+						startupState[scriptType] = module
+					end
 					store:dispatch(SaveScript({
 						Name = module.Name,
 						Container = scriptType,
@@ -51,6 +53,10 @@ return function(plugin)
 					}))
 				end
 			end
+		end
+
+		if next(startupState) ~= nil then
+			store:dispatch(SetStartupState(startupState))
 		end
 	end
 end

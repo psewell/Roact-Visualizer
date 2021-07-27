@@ -5,7 +5,6 @@
 local Actions = script.Parent.Parent.Actions
 local SetTheme = require(Actions.SetTheme)
 local SetThemeConnection = require(Actions.SetThemeConnection)
-local SetRoactInstall = require(Actions.SetRoactInstall)
 
 return function(plugin)
 	return function(store)

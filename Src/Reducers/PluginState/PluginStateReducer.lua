@@ -14,6 +14,7 @@ local initialState = {
 	InputAutoRefreshDelay = false,
 	SavingScript = nil,
 	DeletingScript = nil,
+	StartupState = nil,
 }
 
 local function registerActions()
