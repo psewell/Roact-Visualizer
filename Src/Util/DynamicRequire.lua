@@ -1,3 +1,5 @@
+--!nolint DeprecatedGlobal
+
 local GUID = [[564A1C48%-74D3%-4521%-8083%-CC9757532BCF]]
 
 local scriptPlate = [[

@@ -13,6 +13,7 @@ local initialState = {
 	SelectingModule = false,
 	SelectingRoact = false,
 	InputAutoRefreshDelay = false,
+	HasScriptPermission = false,
 	SavingScript = nil,
 	DeletingScript = nil,
 	StartupState = nil,

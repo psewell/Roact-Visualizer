@@ -18,6 +18,7 @@ local ConfirmDeleteScript = require(main.Src.Components.ConfirmDeleteScript)
 local RoactSelectHelper = require(main.Src.Components.RoactSelectHelper)
 local ConfirmStartupState = require(main.Src.Components.ConfirmStartupState)
 local AboutScreen = require(main.Src.Components.AboutScreen)
+local NoPermissionsScreen = require(main.Src.Components.NoPermissionsScreen)
 
 local MainScreen = Roact.PureComponent:extend("MainScreen")
 
@@ -30,15 +31,18 @@ function MainScreen:render()
 		ToastMessage = Roact.createElement(ToastMessage),
 		ViewWindow = props.RoactInstall and Roact.createElement(ViewWindow),
 
-		AboutScreen = props.ShowAboutScreen and Roact.createElement(AboutScreen),
-		MainView = not props.ShowAboutScreen and Roact.createFragment({
-			RoactSelectHelper = Roact.createElement(RoactSelectHelper),
-			HasRoact = props.RoactInstall and Roact.createFragment({
-				ModuleSelector = Roact.createElement(ModuleSelector),
-				InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
-				InputScriptName = Roact.createElement(InputScriptName),
-				ConfirmDeleteScript = Roact.createElement(ConfirmDeleteScript),
-				ConfirmStartupState = Roact.createElement(ConfirmStartupState),
+		NoPermissionsScreen = not props.HasScriptPermission and Roact.createElement(NoPermissionsScreen),
+		HasPermissions = props.HasScriptPermission and Roact.createFragment({
+			AboutScreen = props.ShowAboutScreen and Roact.createElement(AboutScreen),
+			MainView = not props.ShowAboutScreen and Roact.createFragment({
+				RoactSelectHelper = Roact.createElement(RoactSelectHelper),
+				HasRoact = props.RoactInstall and Roact.createFragment({
+					ModuleSelector = Roact.createElement(ModuleSelector),
+					InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
+					InputScriptName = Roact.createElement(InputScriptName),
+					ConfirmDeleteScript = Roact.createElement(ConfirmDeleteScript),
+					ConfirmStartupState = Roact.createElement(ConfirmStartupState),
+				}),
 			}),
 		}),
 	})
@@ -48,6 +52,7 @@ MainScreen = RoactRodux.connect(function(state)
 	return {
 		RoactInstall = state.PluginState.RoactInstall,
 		ShowAboutScreen = state.PluginState.ShowAboutScreen,
+		HasScriptPermission = state.PluginState.HasScriptPermission,
 	}
 end)(MainScreen)
 
