@@ -5,8 +5,8 @@
 local LOAD_GUID = "F3CA094D39E347D1BE40FD1279D2BA11"
 local DELETE_GUID = "FECF29FF44CF42D9BA6F0037B6D17D98"
 local SAVE_GUID = "DBC50B132F954D1BB7B27F91E9FBD5BE"
-local RESET_GUID = "4B4625166CAC4D568B7F4556380A46B7"
 local OPEN_GUID = "68B1EAD1BF1F46F7BA97ED003BD7F4D3"
+local PRESETS_GUID = "DC61F2095CB442D18C8B5C22F274B272"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
@@ -14,12 +14,12 @@ local RoactRodux = require(main.Packages.RoactRodux)
 local PluginMenu = require(main.Src.Components.Base.PluginMenu)
 local TextButton = require(main.Src.Components.TextButton)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
+local Presets = require(main.Src.ScriptTemplates.Presets)
 local generateId = require(main.Packages.generateId)
 
 local SetSavingScript = require(main.Src.Reducers.PluginState.Actions.SetSavingScript)
 local SetDeletingScript = require(main.Src.Reducers.PluginState.Actions.SetDeletingScript)
 local LoadScript = require(main.Src.Reducers.ScriptTemplates.Thunks.LoadScript)
-local ResetScript = require(main.Src.Reducers.ScriptTemplates.Thunks.ResetScript)
 
 local ScriptLoadButton = Roact.PureComponent:extend("ScriptLoadButton")
 local t = require(main.Packages.t)
@@ -73,19 +73,31 @@ function ScriptLoadButton:init(initialProps)
 		return subMenu
 	end
 
+	self.createPresetsMenu = function(presets, plugin)
+		local subMenu = plugin:CreatePluginMenu(generateId() .. "Presets", "Presets")
+		subMenu.Name = "Presets"
+		subMenu.Title = "Presets"
+		for name, _ in pairs(presets) do
+			subMenu:AddNewAction(generateId() .. PRESETS_GUID .. name, name)
+		end
+		return subMenu
+	end
+
 	self.createMenu = function(pluginMenu, plugin)
 		local props = self.props
 		pluginMenu:AddNewAction(generateId() .. OPEN_GUID, "Open")
 		pluginMenu:AddNewAction(generateId() .. SAVE_GUID, "Save")
-		pluginMenu:AddSeparator()
+		local presets = Presets[props.Type]
+		if next(presets) ~= nil then
+			pluginMenu:AddSeparator()
+			pluginMenu:AddMenu(self.createPresetsMenu(presets, plugin))
+		end
 		if next(props.Scripts) ~= nil then
 			pluginMenu:AddSeparator()
 			for name, _ in pairs(props.Scripts) do
 				pluginMenu:AddMenu(self.createScriptMenu(name, plugin))
 			end
 		end
-		pluginMenu:AddSeparator()
-		pluginMenu:AddNewAction(generateId() .. RESET_GUID, "Reset")
 		return pluginMenu
 	end
 
@@ -96,19 +108,22 @@ function ScriptLoadButton:init(initialProps)
 				props.SetSavingScript(props.Type)
 			elseif (string.find(item.ActionId, OPEN_GUID)) then
 				props.OnActivated()
-			elseif (string.find(item.ActionId, RESET_GUID)) then
-				props.ResetScript(props.Type)
-				props.SetMessage({
-					Type = "ResetScript",
-					Text = string.format([[Reset %s.]], displayNames[props.Type]),
-					Time = 2,
-				})
 			elseif (string.find(item.ActionId, LOAD_GUID)) then
 				local scriptName = string.gsub(item.ActionId, ".*" .. LOAD_GUID, "")
 				props.LoadScript(scriptName, props.Type)
 				props.SetMessage({
 					Type = "LoadedScript",
 					Text = string.format([[Loaded %s "%s".]], displayNames[props.Type], scriptName),
+					Time = 2,
+				})
+			elseif (string.find(item.ActionId, PRESETS_GUID)) then
+				local presetName = string.gsub(item.ActionId, ".*" .. PRESETS_GUID, "")
+				local presets = Presets[props.Type]
+				local preset = presets[presetName]
+				props.LoadScript(preset, props.Type)
+				props.SetMessage({
+					Type = "LoadedScript",
+					Text = string.format([[Loaded %s "%s".]], displayNames[props.Type], presetName),
 					Time = 2,
 				})
 			elseif (string.find(item.ActionId, DELETE_GUID)) then
@@ -167,12 +182,6 @@ end, function(dispatch)
 		LoadScript = function(name, scriptType)
 			dispatch(LoadScript({
 				Name = name,
-				Container = scriptType,
-			}))
-		end,
-
-		ResetScript = function(scriptType)
-			dispatch(ResetScript({
 				Container = scriptType,
 			}))
 		end,

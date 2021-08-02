@@ -127,10 +127,13 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 	local props = self.props
 	local rootScript = props.Root
 	local propsScript = props.Props
+	local plugin = PluginContext:get(self)
 
 	local didLoadProps, propsResult, propsCached
 	xpcall(function()
-		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript, {})
+		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript, {
+			plugin = plugin,
+		})
 		if propsResult and t.table(propsResult) then
 			didLoadProps = true
 		else
@@ -157,17 +160,19 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 			rootResult = DynamicRequire.ForceRequire(rootScript, {
 				Roact = self.ThirdPartyRoact,
 				component = component,
+				plugin = plugin,
 			})
 		else
 			rootResult, rootCached = DynamicRequire.RequireWithCacheResult(rootScript, {
 				Roact = self.ThirdPartyRoact,
 				component = component,
+				plugin = plugin,
 			})
 		end
-		if rootResult then--and t.callback(rootResult) then
+		if rootResult and t.callback(rootResult) or t.table(rootResult) then
 			didLoadRoot = true
 		else
-			ComponentErrorReporter(string.format("Roact-Visualizer: Root script did not return a valid Roact tree."))
+			ComponentErrorReporter(string.format("Roact-Visualizer: Root script did not return a valid Roact component."))
 			self:showErrorMessage("Root encountered an error during load.")
 			didLoadRoot = false
 		end
