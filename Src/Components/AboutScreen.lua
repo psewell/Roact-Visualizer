@@ -7,7 +7,7 @@ Plugin by pa00 (@ZeroIndex)
 
 DevForum Thread Link:]]
 
-local forumPost = "https://devforum.roblox.com/t/tweensequence-editor/218976"
+local forumPost = "https://devforum.roblox.com/t/1388899"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
