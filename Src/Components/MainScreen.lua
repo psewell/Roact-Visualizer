@@ -17,6 +17,7 @@ local InputScriptName = require(main.Src.Components.InputScriptName)
 local ConfirmDeleteScript = require(main.Src.Components.ConfirmDeleteScript)
 local RoactSelectHelper = require(main.Src.Components.RoactSelectHelper)
 local ConfirmStartupState = require(main.Src.Components.ConfirmStartupState)
+local AboutScreen = require(main.Src.Components.AboutScreen)
 
 local MainScreen = Roact.PureComponent:extend("MainScreen")
 
@@ -26,16 +27,19 @@ function MainScreen:render()
 		Background = Roact.createElement(MainBackground),
 		TopToolbar = Roact.createElement(TopToolbar),
 		BottomToolbar = Roact.createElement(BottomToolbar),
-		RoactSelectHelper = Roact.createElement(RoactSelectHelper),
 		ToastMessage = Roact.createElement(ToastMessage),
+		ViewWindow = props.RoactInstall and Roact.createElement(ViewWindow),
 
-		HasRoact = props.RoactInstall and Roact.createFragment({
-			ViewWindow = Roact.createElement(ViewWindow),
-			ModuleSelector = Roact.createElement(ModuleSelector),
-			InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
-			InputScriptName = Roact.createElement(InputScriptName),
-			ConfirmDeleteScript = Roact.createElement(ConfirmDeleteScript),
-			ConfirmStartupState = Roact.createElement(ConfirmStartupState),
+		AboutScreen = props.ShowAboutScreen and Roact.createElement(AboutScreen),
+		MainView = not props.ShowAboutScreen and Roact.createFragment({
+			RoactSelectHelper = Roact.createElement(RoactSelectHelper),
+			HasRoact = props.RoactInstall and Roact.createFragment({
+				ModuleSelector = Roact.createElement(ModuleSelector),
+				InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
+				InputScriptName = Roact.createElement(InputScriptName),
+				ConfirmDeleteScript = Roact.createElement(ConfirmDeleteScript),
+				ConfirmStartupState = Roact.createElement(ConfirmStartupState),
+			}),
 		}),
 	})
 end
@@ -43,6 +47,7 @@ end
 MainScreen = RoactRodux.connect(function(state)
 	return {
 		RoactInstall = state.PluginState.RoactInstall,
+		ShowAboutScreen = state.PluginState.ShowAboutScreen,
 	}
 end)(MainScreen)
 

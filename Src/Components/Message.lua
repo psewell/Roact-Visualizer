@@ -24,6 +24,7 @@ local typecheck = t.interface({
 		InitialText = t.optional(t.string),
 		PlaceholderText = t.optional(t.string),
 		Validate = t.optional(t.callback),
+		TextEditable = t.optional(t.boolean),
 		OnTextSubmitted = t.callback,
 	})),
 	VerticalAlignment = t.optional(t.enum(Enum.VerticalAlignment)),
@@ -106,18 +107,27 @@ function Message:render()
 	local pluginGui = state.pluginGui
 
 	if textBox then
-		buttons = {
-			{
-				Text = "Submit",
-				Default = true,
-				Enabled = state.currentText ~= nil,
-				OnActivated = self.submitText,
-			},
-			{
-				Text = "Cancel",
-				OnActivated = self.cancelText,
-			},
-		}
+		if textBox.TextEditable or textBox.TextEditable == nil then
+			buttons = {
+				{
+					Text = "Submit",
+					Default = true,
+					Enabled = state.currentText ~= nil,
+					OnActivated = self.submitText,
+				},
+				{
+					Text = "Cancel",
+					OnActivated = self.cancelText,
+				},
+			}
+		else
+			buttons = {
+				{
+					Text = "Close",
+					OnActivated = self.cancelText,
+				}
+			}
+		end
 	end
 
 	local textSize = GetTextSize({
@@ -212,6 +222,7 @@ function Message:render()
 				InitialText = textBox.InitialText,
 				PlaceholderText = textBox.PlaceholderText,
 				Validate = textBox.Validate,
+				TextEditable = textBox.TextEditable,
 				OnTextChanged = self.onTextChanged,
 				OnTextSubmitted = textBox.OnTextSubmitted,
 				Position = UDim2.new(0.5, 0, 1, -34),

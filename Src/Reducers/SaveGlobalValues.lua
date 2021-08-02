@@ -3,6 +3,7 @@
 ]]
 
 local settingsKeys = {
+	"FirstLoad",
 	"AutoRefresh",
 	"AutoRefreshDelay",
 	"ShowHelp",

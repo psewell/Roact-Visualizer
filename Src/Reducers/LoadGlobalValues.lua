@@ -3,6 +3,7 @@
 ]]
 
 local settingsKeys = {
+	"FirstLoad",
 	"AutoRefresh",
 	"AutoRefreshDelay",
 	"ShowHelp",
@@ -12,6 +13,7 @@ local settingsKeys = {
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local SetSetting = require(main.Src.Reducers.Settings.Actions.SetSetting)
+local SetShowAboutScreen = require(main.Src.Reducers.PluginState.Actions.SetShowAboutScreen)
 
 return function(plugin)
 	return function(store)
@@ -23,5 +25,16 @@ return function(plugin)
 			end
 		end
 		store:dispatch(SetSetting(values))
+
+		store:flush()
+		local settings = store:getState().Settings
+		if settings.FirstLoad then
+			store:dispatch(SetShowAboutScreen({
+				ShowAboutScreen = true,
+			}))
+			store:dispatch(SetSetting({
+				FirstLoad = false,
+			}))
+		end
 	end
 end

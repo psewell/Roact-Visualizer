@@ -9,6 +9,7 @@ local initialState = {
 	RoactInstall = nil,
 	ReloadCode = "",
 
+	ShowAboutScreen = false,
 	SelectingModule = false,
 	SelectingRoact = false,
 	InputAutoRefreshDelay = false,

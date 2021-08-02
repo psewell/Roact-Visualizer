@@ -18,6 +18,7 @@ local typecheck = t.interface({
 	Position = t.optional(t.UDim2),
 	AnchorPoint = t.optional(t.Vector2),
 	Validate = t.optional(t.callback),
+	TextEditable = t.optional(t.boolean),
 	OnTextChanged = t.callback,
 	OnTextSubmitted = t.callback,
 })
@@ -27,6 +28,7 @@ TextBox.defaultProps = {
 	Position = UDim2.fromScale(1, 1),
 	AnchorPoint = Vector2.new(0, 0),
 	ClearTextOnFocus = false,
+	TextEditable = true,
 }
 
 function TextBox:init(props)
@@ -99,6 +101,7 @@ function TextBox:render()
 		Size = UDim2.new(1, 0, 0, 26),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextEditable = props.TextEditable,
 		BackgroundColor3 = getColor(function(c, m)
 			return theme:GetColor(c.InputFieldBackground)
 		end),
@@ -122,7 +125,7 @@ function TextBox:render()
 			PaddingRight = UDim.new(0, 15),
 		}),
 
-		Stroke = Roact.createElement("UIStroke", {
+		Stroke = props.TextEditable and Roact.createElement("UIStroke", {
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 			Color = getColor(function(c, m)
 				if not textIsValid then
@@ -133,7 +136,7 @@ function TextBox:render()
 					return theme:GetColor(c.InputFieldBorder)
 				end
 			end),
-		}),
+		}) or nil,
 	})
 end
 

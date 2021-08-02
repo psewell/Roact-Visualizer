@@ -13,6 +13,7 @@ local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
 local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSelectingModule)
+local SetShowAboutScreen = require(main.Src.Reducers.PluginState.Actions.SetShowAboutScreen)
 local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local TextButton = require(main.Src.Components.TextButton)
@@ -226,7 +227,7 @@ function BottomToolbar:render()
 				Icon = "rbxassetid://7138347364",
 				ImageSize = UDim2.fromOffset(24, 24),
 				Tooltip = not selecting and tooltips.About or nil,
-				OnActivated = function() end,
+				OnActivated = props.ShowAboutScreen,
 			}),
 		}),
 	})
@@ -254,6 +255,12 @@ end, function(dispatch)
 
 		SetMessage = function(message)
 			dispatch(SetMessage(message))
+		end,
+
+		ShowAboutScreen = function()
+			dispatch(SetShowAboutScreen({
+				ShowAboutScreen = true,
+			}))
 		end,
 	}
 end)(BottomToolbar)

@@ -8,6 +8,7 @@ local initialState = {
 	ShowHelp = true,
 	MinimalAnimations = false,
 	AlignCenter = true,
+	FirstLoad = true,
 }
 
 local function registerActions()
