@@ -1,2 +1,2 @@
 return function(message) warn(message) end
--- Used to report component errors at a more readable scope to the user.
+--Click "Show Error" in the Roact Visualizer window to jump to the error.

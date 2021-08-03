@@ -77,8 +77,12 @@ function ScriptLoadButton:init(initialProps)
 		local subMenu = plugin:CreatePluginMenu(generateId() .. "Presets", "Presets")
 		subMenu.Name = "Presets"
 		subMenu.Title = "Presets"
-		for name, _ in pairs(presets) do
-			subMenu:AddNewAction(generateId() .. PRESETS_GUID .. name, name)
+		for _, item in ipairs(presets) do
+			if t.table(item) then
+				subMenu:AddNewAction(generateId() .. PRESETS_GUID .. item.Name, item.Name)
+			else
+				subMenu:AddSeparator()
+			end
 		end
 		return subMenu
 	end
@@ -87,8 +91,8 @@ function ScriptLoadButton:init(initialProps)
 		local props = self.props
 		pluginMenu:AddNewAction(generateId() .. OPEN_GUID, "Open")
 		pluginMenu:AddNewAction(generateId() .. SAVE_GUID, "Save")
-		local presets = Presets[props.Type]
-		if next(presets) ~= nil then
+		local presets = Presets.GetPresets(props.Type)
+		if #presets > 0 then
 			pluginMenu:AddSeparator()
 			pluginMenu:AddMenu(self.createPresetsMenu(presets, plugin))
 		end
@@ -118,8 +122,7 @@ function ScriptLoadButton:init(initialProps)
 				})
 			elseif (string.find(item.ActionId, PRESETS_GUID)) then
 				local presetName = string.gsub(item.ActionId, ".*" .. PRESETS_GUID, "")
-				local presets = Presets[props.Type]
-				local preset = presets[presetName]
+				local preset = Presets.GetPreset(props.Type, presetName)
 				props.LoadScript(preset, props.Type)
 				props.SetMessage({
 					Type = "LoadedScript",

@@ -5,6 +5,7 @@
 local main = script.Parent
 local SaveGlobalValues = require(main.SaveGlobalValues)
 local SaveLocalValues = require(main.SaveLocalValues)
+local DynamicRequire = require(main.Parent.Util.DynamicRequire)
 
 return function(plugin)
 	return function(store)
@@ -17,5 +18,7 @@ return function(plugin)
 
 		store:dispatch(SaveGlobalValues(plugin))
 		store:dispatch(SaveLocalValues())
+
+		DynamicRequire.Clear()
 	end
 end

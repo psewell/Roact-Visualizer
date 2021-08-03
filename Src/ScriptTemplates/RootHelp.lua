@@ -2,7 +2,7 @@
 	Edit this script to modify the tree passed to the Roact Visualizer.
 	The following special variables are available:
 		Roact: A reference to your local Roact install.
-		component: The current component in the Roact Visualizer.
+		module: The current ModuleScript in the Roact Visualizer.
 
 	EXAMPLE:
 	-- Providing a Roact Context

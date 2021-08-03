@@ -1,14 +1,7 @@
 --!nolint DeprecatedGlobal
 
-local GUID = [[564A1C48%-74D3%-4521%-8083%-CC9757532BCF]]
-
-local scriptPlate = [[
---564A1C48-74D3-4521-8083-CC9757532BCF%s564A1C48-74D3-4521-8083-CC9757532BCF%s
-
-local script = getfenv().script
-local require = getfenv().require
-%s
-]]
+local GUID = [[564A1C4874D345218083CC9757532BCF]]
+local scriptNamePlate = "%s%s%s%s"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Cryo = require(main.Packages.Cryo)
@@ -27,13 +20,15 @@ local function dynamicRequire(module, overrideRequire, overrideScript)
 	else
 		scriptName = module:GetFullName()
 	end
-	local newSource = string.format(scriptPlate, module:GetDebugId(), scriptName, module.Source)
-	local func, err = loadstring(newSource)
+	local func, err = loadstring(module.Source,
+		string.format(scriptNamePlate, module:GetDebugId(), GUID, scriptName, GUID))
 	assert(func, err)
-	local env = getfenv(func)
-	env.script = overrideScript or module
-	env.require = overrideRequire
-	setfenv(func, env)
+	setfenv(func, setmetatable({
+		script = overrideScript or module,
+		require = overrideRequire,
+	}, {
+		__index = getfenv(),
+	}))
 	local result = func()
 	return result
 end
@@ -113,33 +108,24 @@ local function reqStaticModule(module)
 end
 
 local function getErrorTraceback(err, traceback)
-	local items = string.split(traceback, "\n")
 	local scriptName, lineNumber, debugId
 
-	if (string.find(err, GUID)) then
-		err = string.gsub(err, ".*%-%-" .. GUID, "")
-		debugId = string.gsub(err, GUID .. ".*", "")
-		err = string.gsub(err, ".*" .. GUID, "")
-		local nameString = string.gsub(err, "%.%.%.\"%]%:.*", "")
-		scriptName = nameString
-		local numString = string.gsub(err, ".*%.%.%.\"%]%:", "")
-		numString = string.gsub(numString, "%:.*", "")
-		lineNumber = tonumber(numString) - 4
-		err = string.gsub(err, ".*%.%.%.\"%]%:%d*%:%s*", "")
+	if string.find(err, "%[string \"") then
+		-- Syntax error
+		err = string.gsub(err, ".*%[string \"", "")
+		local errorData = string.split(err, GUID)
+		debugId = errorData[1]
+		scriptName = errorData[2]
+		lineNumber = tonumber(errorData[3]:match("%d+"))
+		err = string.gsub(errorData[3], "\"%]%:%d+%:%s*", "", 1)
 	else
-		scriptName = string.gsub(items[2], ".*" .. GUID, "")
-		local debugIdString = string.gsub(items[2], ".*%-%-" .. GUID, "")
-		debugId = string.gsub(debugIdString, GUID .. ".*", "")
-		for index = 1, #items do
-			local item = items[index]
-			if (string.find(item, "Src.Util.DynamicRequire"))
-				and string.find(item, "function dynamicRequire") then
-				local lineNumberItem = items[index - 1]
-				lineNumber = string.match(lineNumberItem, ".*%f[%d.](%d*%.?%d+)")
-				lineNumber = tonumber(lineNumber) - 4
-				break
-			end
-		end
+		-- Runtime error
+		local items = string.split(traceback, "\n")
+		local errorLocation = items[2]
+		local errorData = string.split(errorLocation, GUID)
+		debugId = errorData[1]
+		scriptName = errorData[2]
+		lineNumber = tonumber(errorData[3]:match("%d+"))
 	end
 
 	local module
