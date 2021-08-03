@@ -133,6 +133,7 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 	xpcall(function()
 		propsResult, propsCached = DynamicRequire.RequireWithCacheResult(propsScript, {
 			plugin = plugin,
+			module = props.RootModule,
 		})
 		if propsResult and t.table(propsResult) then
 			didLoadProps = true
@@ -161,12 +162,14 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 				Roact = self.ThirdPartyRoact,
 				component = component,
 				plugin = plugin,
+				module = props.RootModule,
 			})
 		else
 			rootResult, rootCached = DynamicRequire.RequireWithCacheResult(rootScript, {
 				Roact = self.ThirdPartyRoact,
 				component = component,
 				plugin = plugin,
+				module = props.RootModule,
 			})
 		end
 		if rootResult and t.callback(rootResult) or t.table(rootResult) then
@@ -251,9 +254,6 @@ function ViewWindow:didUpdate(lastProps, lastState)
 
 		if self.ThirdPartyRoact == nil or props.RoactInstall ~= lastProps.RoactInstall then
 			self.ThirdPartyRoact = DynamicRequire.RequireStaticModule(props.RoactInstall)
-			self.ThirdPartyRoact.setGlobalConfig({
-				elementTracing = true,
-			})
 
 			if self.handle then
 				self.ThirdPartyRoact.unmount(self.handle)
