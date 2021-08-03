@@ -1,8 +1,6 @@
 --!nolint DeprecatedGlobal
 
 local GUID = [[564A1C4874D345218083CC9757532BCF]]
-
-local scriptPlate = "local script = getfenv().script local require = getfenv().require %s"
 local scriptNamePlate = "%s%s%s%s"
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
@@ -22,14 +20,15 @@ local function dynamicRequire(module, overrideRequire, overrideScript)
 	else
 		scriptName = module:GetFullName()
 	end
-	local newSource = string.format(scriptPlate, module.Source)
-	local func, err = loadstring(newSource,
+	local func, err = loadstring(module.Source,
 		string.format(scriptNamePlate, module:GetDebugId(), GUID, scriptName, GUID))
 	assert(func, err)
-	local env = getfenv(func)
-	env.script = overrideScript or module
-	env.require = overrideRequire
-	setfenv(func, env)
+	setfenv(func, setmetatable({
+		script = overrideScript or module,
+		require = overrideRequire,
+	}, {
+		__index = getfenv(),
+	}))
 	local result = func()
 	return result
 end

@@ -1,5 +1,5 @@
 local Roact = script.Roact
-local component = script.component
+local component = require(script.module)
 
 return function(props)
 	return Roact.createElement(component, props)

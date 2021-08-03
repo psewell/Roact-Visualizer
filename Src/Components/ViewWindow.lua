@@ -87,43 +87,7 @@ function ViewWindow:showErrorMessage(message, scriptInfo)
 	})
 end
 
-function ViewWindow:loadComponent(lastProps)
-	local props = self.props
-	local name, component, didCache
-	if props.RootModule then
-		local rootModule = props.RootModule
-		name = rootModule:GetDebugId()
-
-		local success, traceback, scriptInfo
-		xpcall(function()
-			component, didCache = DynamicRequire.RequireWithCacheResult(rootModule)
-			success = true
-		end, function(err)
-			traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
-			ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Load:\n\t%s", traceback))
-			success = false
-		end)
-
-		local isValid = component and (t.callback(component) or t.table(component)) or false
-
-		if not success or not isValid then
-			if success and not isValid then
-				ComponentErrorReporter(string.format("Roact-Visualizer: Current script did not return a valid Roact component."))
-			end
-			self:showErrorMessage("Component encountered an error during load.", scriptInfo)
-			return
-		elseif props.RootModule ~= lastProps.RootModule then
-			props.SetMessage({
-				Type = "LoadedComponent",
-				Text = "Component successfully loaded.",
-				Time = 2,
-			})
-		end
-	end
-	return name, component, didCache
-end
-
-function ViewWindow:updateTree(name, component, target, moduleCached)
+function ViewWindow:updateTree(target)
 	local props = self.props
 	local rootScript = props.Root
 	local propsScript = props.Props
@@ -150,24 +114,22 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 	end)
 
 	if not didLoadProps then
-		return
+		return false
 	end
 
 	local didLoadRoot, rootResult, rootCached
 	xpcall(function()
-		if not (moduleCached and propsCached) then
+		if not (propsCached) then
 			-- Force the root to update, there is an update ahead of us
 			rootCached = false
 			rootResult = DynamicRequire.ForceRequire(rootScript, {
 				Roact = self.ThirdPartyRoact,
-				component = component,
 				plugin = plugin,
 				module = props.RootModule,
 			})
 		else
 			rootResult, rootCached = DynamicRequire.RequireWithCacheResult(rootScript, {
 				Roact = self.ThirdPartyRoact,
-				component = component,
 				plugin = plugin,
 				module = props.RootModule,
 			})
@@ -175,28 +137,28 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 		if rootResult and t.callback(rootResult) or t.table(rootResult) then
 			didLoadRoot = true
 		else
-			ComponentErrorReporter(string.format("Roact-Visualizer: Root script did not return a valid Roact component."))
-			self:showErrorMessage("Root encountered an error during load.")
+			ComponentErrorReporter(string.format("Roact-Visualizer: Tree script did not return a valid Roact component."))
+			self:showErrorMessage("Tree encountered an error during load.")
 			didLoadRoot = false
 		end
 	end, function(err)
 		local traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
-		ComponentErrorReporter(string.format("Roact-Visualizer: Root Error during Load:\n\t%s", traceback))
-		self:showErrorMessage("Root encountered an error during load.", scriptInfo)
+		ComponentErrorReporter(string.format("Roact-Visualizer: Tree Error during Load:\n\t%s", traceback))
+		self:showErrorMessage("Tree encountered an error during load.", scriptInfo)
 		didLoadRoot = false
 	end)
 
 	if not didLoadRoot then
-		return
+		return false
 	end
 
-	if moduleCached and propsCached and rootCached then
+	if propsCached and rootCached then
 		props.SetMessage({
 			Type = "NoChanges",
-			Text = "Component not updated: No changes detected.",
+			Text = "Tree not updated: No changes detected.",
 			Time = 2,
 		})
-		return
+		return true
 	end
 
 	local tree = self.ThirdPartyRoact.createElement(self.ThirdPartyRoact.Portal, {
@@ -215,18 +177,18 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 		success = true
 	end, function(err)
 		traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
-		ComponentErrorReporter(string.format("Roact-Visualizer: Component Error during Render:\n\t%s", traceback))
+		ComponentErrorReporter(string.format("Roact-Visualizer: Tree Error during Render:\n\t%s", traceback))
 		success = false
 	end)
 
 	if success then
-		if moduleCached and propsCached and not rootCached then
+		if propsCached and not rootCached then
 			props.SetMessage({
-				Type = "RootUpdated",
-				Text = "Root successfully updated.",
+				Type = "TreeUpdated",
+				Text = "Tree successfully updated.",
 				Time = 2,
 			})
-		elseif moduleCached and rootCached and not propsCached then
+		elseif rootCached and not propsCached then
 			props.SetMessage({
 				Type = "PropsUpdated",
 				Text = "Props successfully updated.",
@@ -234,13 +196,15 @@ function ViewWindow:updateTree(name, component, target, moduleCached)
 			})
 		else
 			props.SetMessage({
-				Type = "ComponentUpdated",
-				Text = "Component successfully updated.",
+				Type = "TreeUpdated",
+				Text = "Tree successfully updated.",
 				Time = 2,
 			})
 		end
+		return true
 	else
-		self:showErrorMessage("Component encountered an error during render.", scriptInfo)
+		self:showErrorMessage("Tree encountered an error during render.", scriptInfo)
+		return false
 	end
 end
 
@@ -262,13 +226,16 @@ function ViewWindow:didUpdate(lastProps, lastState)
 		end
 
 		if target then
-			local name, component, didCache = self:loadComponent(lastProps)
-			if name and component then
-				self:updateTree(name, component, target, didCache)
-			elseif self.handle then
-				self.ThirdPartyRoact.unmount(self.handle)
-				self.handle = nil
+			local success = self:updateTree(target)
+			if not success then
+				if self.handle then
+					self.ThirdPartyRoact.unmount(self.handle)
+					self.handle = nil
+				end
 			end
+		elseif self.handle then
+			self.ThirdPartyRoact.unmount(self.handle)
+			self.handle = nil
 		end
 
 		self:makeConnections()
