@@ -324,7 +324,8 @@ function ViewWindow:render()
 
 		Target = Roact.createElement("Frame", {
 			BackgroundTransparency = 1,
-			AutomaticSize = Enum.AutomaticSize.XY,
+			Size = center and UDim2.fromScale(0, 0) or UDim2.fromScale(1, 1),
+			AutomaticSize = center and Enum.AutomaticSize.XY or Enum.AutomaticSize.None,
 			[Roact.Change.AbsoluteSize] = self.contentsSizeChanged,
 			[Roact.Ref] = self.targetRef,
 		}),
