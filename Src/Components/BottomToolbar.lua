@@ -17,6 +17,7 @@ local SetShowAboutScreen = require(main.Src.Reducers.PluginState.Actions.SetShow
 local SetRootModule = require(main.Src.Reducers.PluginState.Actions.SetRootModule)
 local SetMessage = require(main.Src.Reducers.Message.Actions.SetMessage)
 local TextButton = require(main.Src.Components.TextButton)
+local NewButton = require(main.Src.Components.NewButton)
 local Connection = require(main.Src.Components.Signal.Connection)
 local GetTextSize = require(main.Packages.GetTextSize)
 local PluginContext = require(main.Src.Contexts.PluginContext)
@@ -60,6 +61,11 @@ function BottomToolbar:init(props)
 	self.openModule = function()
 		local plugin = PluginContext:get(self)
 		plugin:OpenScript(self.props.RootModule)
+	end
+
+	self.startSelecting = function()
+		local props = self.props
+		props.StartSelecting(props.SelectMode)
 	end
 end
 
@@ -144,15 +150,9 @@ function BottomToolbar:render()
 			Padding = UDim.new(0, 4),
 		}),
 
-		SelectButton = Roact.createElement(TextButton, {
-			LayoutOrder = 1,
+		NewButton = Roact.createElement(NewButton, {
 			Text = minified and "" or "New",
-			Icon = "rbxassetid://7148404429",
-			ImageSize = UDim2.fromOffset(20, 20),
-			ImageOffset = Vector2.new(0, 1),
-			ColorImage = true,
 			Tooltip = not selecting and tooltips.Select or nil,
-			OnActivated = props.StartSelecting,
 		}),
 
 		Separator = Roact.createElement("Frame", {
@@ -237,6 +237,7 @@ BottomToolbar = RoactRodux.connect(function(state)
 	return {
 		RootModule = state.PluginState.RootModule,
 		SelectingModule = state.PluginState.SelectingModule,
+		SelectMode = state.Settings.SelectMode,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)
@@ -247,9 +248,9 @@ end, function(dispatch)
 			}))
 		end,
 
-		StartSelecting = function()
+		StartSelecting = function(selectMode)
 			dispatch(SetSelectingModule({
-				SelectingModule = true,
+				SelectingModule = selectMode,
 			}))
 		end,
 

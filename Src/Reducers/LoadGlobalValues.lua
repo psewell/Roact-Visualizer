@@ -9,6 +9,7 @@ local settingsKeys = {
 	"ShowHelp",
 	"MinimalAnimations",
 	"AlignCenter",
+	"SelectMode",
 }
 
 local main = script:FindFirstAncestor("Roact-Visualizer")

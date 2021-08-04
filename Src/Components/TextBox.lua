@@ -29,6 +29,9 @@ TextBox.defaultProps = {
 	AnchorPoint = Vector2.new(0, 0),
 	ClearTextOnFocus = false,
 	TextEditable = true,
+	Validate = function()
+		return true
+	end,
 }
 
 function TextBox:init(props)
@@ -74,6 +77,15 @@ function TextBox:didMount()
 	end
 	self.onTextChanged(textBox)
 	if self.props.CaptureFocus then
+		task.defer(function()
+			textBox:CaptureFocus()
+		end)
+	end
+end
+
+function TextBox:didUpdate(lastProps)
+	if self.props.CaptureFocus and not lastProps.CaptureFocus then
+		local textBox = self.textBox:getValue()
 		task.defer(function()
 			textBox:CaptureFocus()
 		end)

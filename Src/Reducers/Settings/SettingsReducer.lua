@@ -9,6 +9,7 @@ local initialState = {
 	MinimalAnimations = false,
 	AlignCenter = true,
 	FirstLoad = true,
+	SelectMode = "FromExplorer",
 }
 
 local function registerActions()

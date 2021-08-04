@@ -26,6 +26,7 @@ local typecheck = t.interface({
 	ColorImage = t.optional(t.boolean),
 	Enabled = t.optional(t.boolean),
 	AutoButtonColor = t.optional(t.boolean),
+	FitWidth = t.optional(t.boolean),
 })
 
 TextButton.defaultProps = {
@@ -65,10 +66,11 @@ function TextButton:render()
 
 	return Roact.createElement("TextButton", {
 		LayoutOrder = props.LayoutOrder,
-		Size = UDim2.fromOffset(width, 26),
+		Size = props.FitWidth and UDim2.new(1, 0, 0, 26) or UDim2.fromOffset(width, 26),
 		Font = Enum.Font.SourceSans,
 		Position = props.Position,
 		AnchorPoint = props.AnchorPoint,
+		TextXAlignment = Enum.TextXAlignment.Left,
 		TextSize = 18,
 		Text = props.Text,
 		AutoButtonColor = autoColor and enabled,
@@ -88,7 +90,11 @@ function TextButton:render()
 		}),
 
 		Padding = icon and props.Text ~= "" and Roact.createElement("UIPadding", {
-			PaddingLeft = UDim.new(0, 20),
+			PaddingLeft = UDim.new(0, 26),
+		}),
+
+		Padding2 = icon == nil and props.Text ~= "" and Roact.createElement("UIPadding", {
+			PaddingLeft = UDim.new(0, 6),
 		}),
 
 		Icon = icon and Roact.createElement("ImageLabel", {
@@ -99,7 +105,7 @@ function TextButton:render()
 			Image = icon,
 			ImageTransparency = enabled and 0 or 0.5,
 			Size = props.ImageSize,
-			Position = props.Text ~= "" and UDim2.new(0, 3 + props.ImageOffset.X, 0.5, props.ImageOffset.Y)
+			Position = props.Text ~= "" and UDim2.new(0, -3 + props.ImageOffset.X, 0.5, props.ImageOffset.Y)
 				or UDim2.new(0.5, props.ImageOffset.X, 0.5, props.ImageOffset.Y),
 			AnchorPoint = props.Text ~= "" and Vector2.new(1, 0.5)
 				or Vector2.new(0.5, 0.5),
@@ -109,6 +115,8 @@ function TextButton:render()
 			Text = tooltip,
 			Icon = icon,
 		}),
+
+		Children = Roact.createFragment(props[Roact.Children]),
 	})
 end
 
