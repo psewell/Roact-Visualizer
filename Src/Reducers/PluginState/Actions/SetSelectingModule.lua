@@ -8,7 +8,7 @@ local Cryo = require(main.Packages.Cryo)
 local t = require(main.Packages.t)
 
 local typecheck = t.interface({
-	SelectingModule = t.boolean,
+	SelectingModule = t.optional(t.literal("FromExplorer", "FromFile")),
 })
 
 local function create(props)
@@ -18,7 +18,7 @@ end
 
 local function reduce(state, action)
 	return Cryo.Dictionary.join(state, {
-		SelectingModule = action.SelectingModule,
+		SelectingModule = action.SelectingModule or Cryo.None,
 	})
 end
 

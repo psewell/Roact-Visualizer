@@ -61,6 +61,11 @@ function BottomToolbar:init(props)
 		local plugin = PluginContext:get(self)
 		plugin:OpenScript(self.props.RootModule)
 	end
+
+	self.startSelecting = function()
+		local props = self.props
+		props.StartSelecting(props.SelectMode)
+	end
 end
 
 function BottomToolbar:didMount()
@@ -152,7 +157,7 @@ function BottomToolbar:render()
 			ImageOffset = Vector2.new(0, 1),
 			ColorImage = true,
 			Tooltip = not selecting and tooltips.Select or nil,
-			OnActivated = props.StartSelecting,
+			OnActivated = self.startSelecting,
 		}),
 
 		Separator = Roact.createElement("Frame", {
@@ -237,6 +242,7 @@ BottomToolbar = RoactRodux.connect(function(state)
 	return {
 		RootModule = state.PluginState.RootModule,
 		SelectingModule = state.PluginState.SelectingModule,
+		SelectMode = state.Settings.SelectMode,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)
@@ -247,9 +253,9 @@ end, function(dispatch)
 			}))
 		end,
 
-		StartSelecting = function()
+		StartSelecting = function(selectMode)
 			dispatch(SetSelectingModule({
-				SelectingModule = true,
+				SelectingModule = selectMode,
 			}))
 		end,
 

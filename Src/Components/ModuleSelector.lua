@@ -121,7 +121,7 @@ function ModuleSelector:didMount()
 end
 
 function ModuleSelector:didUpdate(lastProps)
-	if self.props.SelectingModule and not lastProps.SelectingModule then
+	if self.props.SelectingModule == "FromExplorer" and not lastProps.SelectingModule then
 		self:setState({
 			dragObject = Roact.None,
 			selectedObject = Roact.None,
@@ -136,7 +136,7 @@ function ModuleSelector:render()
 	local dragObject = state.dragObject
 	local selectedObject = state.selectedObject
 	local props = self.props
-	local selecting = props.SelectingModule
+	local selecting = props.SelectingModule == "FromExplorer"
 
 	local activeScript = StudioService.ActiveScript
 	local validSelectText
@@ -242,9 +242,7 @@ end, function(dispatch)
 		end,
 
 		StopSelecting = function()
-			dispatch(SetSelectingModule({
-				SelectingModule = false,
-			}))
+			dispatch(SetSelectingModule({}))
 		end,
 	}
 end)(ModuleSelector)

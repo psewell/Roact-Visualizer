@@ -11,6 +11,8 @@ local SEARCH_LOCATIONS = {
 	game.StarterPack,
 	game.ServerScriptService,
 	game.ServerStorage,
+	game.PluginGuiService,
+	game.PluginDebugService,
 }
 
 local locateMessage = [[Locate your local Roact install

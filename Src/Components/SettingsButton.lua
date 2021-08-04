@@ -25,6 +25,11 @@ SettingsButton.defaultProps = {
 	LayoutOrder = 1,
 }
 
+local selectModes = {
+	FromExplorer = "Explorer",
+	FromFile = "File Browser",
+}
+
 function SettingsButton:getCheckMark(condition)
 	if not condition then
 		return nil
@@ -58,6 +63,19 @@ function SettingsButton:init(initialProps)
 		})
 	end
 
+	self.createSelectModeMenu = function(plugin)
+		local props = self.props
+		local selectMode = props.SelectMode
+		local subMenu = plugin:CreatePluginMenu(generateId() .. "SelectMode", "Select Mode")
+		subMenu.Name = "Select Mode"
+		subMenu.Title = "Select Mode: " .. selectModes[selectMode]
+		for key, displayText in pairs(selectModes) do
+			subMenu:AddNewAction(generateId() .. "SelectMode" .. key, displayText,
+				self:getCheckMark(selectMode == key))
+		end
+		return subMenu
+	end
+
 	self.createDelayMenu = function(plugin, title)
 		local props = self.props
 		local subMenu = plugin:CreatePluginMenu(generateId() .. "Delay", "Delay")
@@ -85,6 +103,8 @@ function SettingsButton:init(initialProps)
 		end
 		pluginMenu:AddMenu(self.createDelayMenu(plugin, refreshDelay))
 		pluginMenu:AddSeparator()
+		pluginMenu:AddMenu(self.createSelectModeMenu(plugin))
+		pluginMenu:AddSeparator()
 		pluginMenu:AddNewAction(generateId() .. "ShowHelp", "Show Help",
 			self:getCheckMark(props.ShowHelp))
 		pluginMenu:AddNewAction(generateId() .. "MinimalAnimations", "Use Animations",
@@ -99,6 +119,14 @@ function SettingsButton:init(initialProps)
 				props.SetShowHelp(not props.ShowHelp)
 			elseif (string.find(item.ActionId, "MinimalAnimations")) then
 				props.SetSetting({MinimalAnimations = not props.MinimalAnimations})
+			elseif (string.find(item.ActionId, "SelectMode")) then
+				local key = item.ActionId:gsub(".*SelectMode", "")
+				props.SetSetting({SelectMode = key})
+				self.props.SetMessage({
+					Type = "SetSelectMode",
+					Text = string.format("Set Select Mode to %s.", selectModes[key]),
+					Time = 2,
+				})
 			elseif (string.find(item.ActionId, "AutoRefresh")) then
 				props.SetSetting({
 					AutoRefresh = not props.AutoRefresh,
@@ -167,6 +195,7 @@ SettingsButton = RoactRodux.connect(function(state)
 		AutoRefreshDelay = state.Settings.AutoRefreshDelay,
 		ShowHelp = state.Settings.ShowHelp,
 		MinimalAnimations = state.Settings.MinimalAnimations,
+		SelectMode = state.Settings.SelectMode,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)

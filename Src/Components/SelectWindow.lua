@@ -27,6 +27,11 @@ function SelectWindow:init()
 			hovered = false,
 		})
 	end
+
+	self.startSelecting = function()
+		local props = self.props
+		props.StartSelecting(props.SelectMode)
+	end
 end
 
 function SelectWindow:render()
@@ -55,7 +60,7 @@ function SelectWindow:render()
 		end),
 		[Roact.Event.MouseEnter] = self.mouseEnter,
 		[Roact.Event.MouseLeave] = self.mouseLeave,
-		[Roact.Event.Activated] = props.StartSelecting,
+		[Roact.Event.Activated] = self.startSelecting,
 	}, {
 		Padding = Roact.createElement("UIPadding", {
 			PaddingTop = UDim.new(0, 4),
@@ -88,13 +93,14 @@ end
 
 SelectWindow = RoactRodux.connect(function(state)
 	return {
+		SelectMode = state.Settings.SelectMode,
 		Theme = state.PluginState.Theme,
 	}
 end, function(dispatch)
 	return {
-		StartSelecting = function()
+		StartSelecting = function(selectMode)
 			dispatch(SetSelectingModule({
-				SelectingModule = true,
+				SelectingModule = selectMode,
 			}))
 		end,
 	}

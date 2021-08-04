@@ -11,6 +11,7 @@ local TopToolbar = require(main.Src.Components.TopToolbar)
 local BottomToolbar = require(main.Src.Components.BottomToolbar)
 local ViewWindow = require(main.Src.Components.ViewWindow)
 local ModuleSelector = require(main.Src.Components.ModuleSelector)
+local ModuleFromFileSelector = require(main.Src.Components.ModuleFromFileSelector)
 local ToastMessage = require(main.Src.Components.ToastMessage)
 local InputAutoRefreshDelay = require(main.Src.Components.InputAutoRefreshDelay)
 local InputScriptName = require(main.Src.Components.InputScriptName)
@@ -38,6 +39,7 @@ function MainScreen:render()
 				RoactSelectHelper = Roact.createElement(RoactSelectHelper),
 				HasRoact = props.RoactInstall and Roact.createFragment({
 					ModuleSelector = Roact.createElement(ModuleSelector),
+					ModuleFromFileSelector = Roact.createElement(ModuleFromFileSelector),
 					InputAutoRefreshDelay = Roact.createElement(InputAutoRefreshDelay),
 					InputScriptName = Roact.createElement(InputScriptName),
 					ConfirmDeleteScript = Roact.createElement(ConfirmDeleteScript),

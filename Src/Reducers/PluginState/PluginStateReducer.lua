@@ -10,7 +10,7 @@ local initialState = {
 	ReloadCode = "",
 
 	ShowAboutScreen = false,
-	SelectingModule = false,
+	SelectingModule = nil,
 	SelectingRoact = false,
 	InputAutoRefreshDelay = false,
 	HasScriptPermission = false,

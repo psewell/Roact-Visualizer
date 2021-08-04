@@ -9,6 +9,7 @@ local settingsKeys = {
 	"ShowHelp",
 	"MinimalAnimations",
 	"AlignCenter",
+	"SelectMode",
 }
 
 return function(plugin)
