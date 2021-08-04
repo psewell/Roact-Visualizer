@@ -8,7 +8,7 @@ local Cryo = require(main.Packages.Cryo)
 local t = require(main.Packages.t)
 
 local typecheck = t.interface({
-	SelectingModule = t.optional(t.literal("FromExplorer", "FromFile")),
+	SelectingModule = t.optional(t.literal("FromExplorer", "FromFile", "FromList")),
 })
 
 local function create(props)

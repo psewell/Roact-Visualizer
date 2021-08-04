@@ -25,9 +25,14 @@ SettingsButton.defaultProps = {
 	LayoutOrder = 1,
 }
 
+local selectModesOrdered = {
+	"FromExplorer", "FromList", "FromFile",
+}
+
 local selectModes = {
-	FromExplorer = "Explorer",
-	FromFile = "File Browser",
+	FromExplorer = "Active Selection",
+	FromList = "ModuleScript List",
+	FromFile = "File Browser (Rojo)",
 }
 
 function SettingsButton:getCheckMark(condition)
@@ -67,9 +72,10 @@ function SettingsButton:init(initialProps)
 		local props = self.props
 		local selectMode = props.SelectMode
 		local subMenu = plugin:CreatePluginMenu(generateId() .. "SelectMode", "Select Mode")
-		subMenu.Name = "Select Mode"
-		subMenu.Title = "Select Mode: " .. selectModes[selectMode]
-		for key, displayText in pairs(selectModes) do
+		subMenu.Name = "Default Select Mode"
+		subMenu.Title = "Default Select Mode: " .. selectModes[selectMode]
+		for _, key in ipairs(selectModesOrdered) do
+			local displayText = selectModes[key]
 			subMenu:AddNewAction(generateId() .. "SelectMode" .. key, displayText,
 				self:getCheckMark(selectMode == key))
 		end

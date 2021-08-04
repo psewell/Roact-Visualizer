@@ -6,13 +6,33 @@
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
 local RoactRodux = require(main.Packages.RoactRodux)
-local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSelectingModule)
+local PluginMenu = require(main.Src.Components.Base.PluginMenu)
 local getColor = require(main.Src.Util.getColor)
+local generateId = require(main.Packages.generateId)
+
+local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSelectingModule)
 
 local SelectWindow = Roact.PureComponent:extend("SelectWindow")
 
+local selectModesOrdered = {
+	"FromExplorer", "FromList", "FromFile",
+}
+
+local selectModes = {
+	FromExplorer = "...from Active Selection",
+	FromList = "...from ModuleScript List",
+	FromFile = "...from File Browser (Rojo)",
+}
+
+local icons = {
+	FromExplorer = "rbxasset://textures/AssetManager/explorer.png",
+	FromList = "rbxassetid://5428232036",
+	FromFile = "rbxassetid://1153635961",
+}
+
 function SelectWindow:init()
 	self.state = {
+		showMenu = false,
 		hovered = false,
 	}
 
@@ -32,6 +52,36 @@ function SelectWindow:init()
 		local props = self.props
 		props.StartSelecting(props.SelectMode)
 	end
+
+	self.showMenu = function()
+		self:setState({
+			showMenu = true,
+		})
+	end
+
+	self.hideMenu = function()
+		self:setState({
+			showMenu = false,
+		})
+	end
+
+	self.createMenu = function(pluginMenu, plugin)
+		for _, key in ipairs(selectModesOrdered) do
+			local displayText = selectModes[key]
+			local icon = icons[key]
+			pluginMenu:AddNewAction(generateId() .. "SelectMode" .. key, displayText, icon)
+		end
+		return pluginMenu
+	end
+
+	self.onItemSelected = function(item)
+		if item then
+			local props = self.props
+			local key = item.ActionId:gsub(".*SelectMode", "")
+			props.StartSelecting(key)
+		end
+		self.hideMenu()
+	end
 end
 
 function SelectWindow:render()
@@ -39,6 +89,7 @@ function SelectWindow:render()
 	local theme = props.Theme
 	local state = self.state
 	local hovered = state.hovered
+	local showMenu = state.showMenu
 
 	return Roact.createElement("TextButton", {
 		Size = UDim2.fromScale(1, 1),
@@ -61,6 +112,7 @@ function SelectWindow:render()
 		[Roact.Event.MouseEnter] = self.mouseEnter,
 		[Roact.Event.MouseLeave] = self.mouseLeave,
 		[Roact.Event.Activated] = self.startSelecting,
+		[Roact.Event.MouseButton2Click] = self.showMenu,
 	}, {
 		Padding = Roact.createElement("UIPadding", {
 			PaddingTop = UDim.new(0, 4),
@@ -87,6 +139,11 @@ function SelectWindow:render()
 					ColorSequenceKeypoint.new(1, Color3.new(0, 1, 1)),
 				}),
 			}),
+		}),
+
+		Menu = showMenu and Roact.createElement(PluginMenu, {
+			CreateMenu = self.createMenu,
+			OnItemSelected = self.onItemSelected,
 		}),
 	})
 end

@@ -2,7 +2,7 @@
 	Used to select a RootModule by prompting the user to import a file.
 ]]
 
-local fileBrowserText = [[Use the file browser dialog to select a module.]]
+local fileBrowserText = [[Use the file browser to select a module.]]
 
 local main = script:FindFirstAncestor("Roact-Visualizer")
 local Roact = require(main.Packages.Roact)
@@ -17,7 +17,6 @@ local SetSelectingModule = require(main.Src.Reducers.PluginState.Actions.SetSele
 local ModuleFromFileSelector = Roact.PureComponent:extend("ModuleFromFileSelector")
 
 function ModuleFromFileSelector:init()
-	self.dragArea = Roact.createRef()
 	self.state = {
 		selectedObject = nil,
 	}
@@ -66,7 +65,7 @@ function ModuleFromFileSelector:init()
 				self.props.SetMessage({
 					Type = "NoMatch",
 					Text = "No matching ModuleScripts found.",
-					Time = 3,
+					Time = 2,
 				})
 				self.setModule(nil)
 			end
@@ -75,7 +74,7 @@ function ModuleFromFileSelector:init()
 			self.props.SetMessage({
 				Type = "SelectionError",
 				Text = "File select dialog encountered an error.",
-				Time = 3,
+				Time = 2,
 			})
 			self.setModule(nil)
 		end)
