@@ -65,7 +65,7 @@ function ModuleFromFileSelector:init()
 			else
 				self.props.SetMessage({
 					Type = "NoMatch",
-					Text = "Selected file did not match any ModuleScript.",
+					Text = "No matching ModuleScripts found.",
 					Time = 3,
 				})
 				self.setModule(nil)
@@ -73,8 +73,8 @@ function ModuleFromFileSelector:init()
 		end):catch(function(err)
 			warn(err)
 			self.props.SetMessage({
-				Type = "NoMatch",
-				Text = "Selected file did not match any ModuleScript.",
+				Type = "SelectionError",
+				Text = "File select dialog encountered an error.",
 				Time = 3,
 			})
 			self.setModule(nil)
