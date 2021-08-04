@@ -100,8 +100,8 @@ function Message:render()
 	local props = self.props
 	local theme = props.Theme
 	local icon = props.Icon
-	local textBox = props.TextBox
-	local buttons = props.Buttons
+	local textBox = props.Visible and props.TextBox or nil
+	local buttons = props.Visible and props.Buttons or nil
 	local state = self.state
 	local absoluteSize = state.absoluteSize
 	local pluginGui = state.pluginGui
