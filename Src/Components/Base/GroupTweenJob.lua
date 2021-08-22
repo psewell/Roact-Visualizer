@@ -65,6 +65,7 @@ function GroupTweenJob:makeVisibleNow()
 end
 
 function GroupTweenJob:forward()
+	self:addItems()
 	if next(self.jobs) == nil then return end
 
 	if self.props.MinimalAnimations then
@@ -179,6 +180,20 @@ function GroupTweenJob:getInitialState(instance)
 		end
 	end
 	return nil
+end
+
+function GroupTweenJob:addItems()
+	if self and self.catchRef and not self.unmounted then
+		local catch = self.catchRef:getValue()
+		for _, child in ipairs(catch:GetDescendants()) do
+			if self.jobs[child] == nil then
+				local initialState = self:getInitialState(child)
+				if initialState then
+					self.jobs[child] = initialState
+				end
+			end
+		end
+	end
 end
 
 function GroupTweenJob:didMount()

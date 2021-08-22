@@ -25,7 +25,6 @@ function ViewWindow:init()
 	self.handle = nil
 	self.ThirdPartyRoact = nil
 	self.nextUpdate = nil
-	self.contentsSize, self.updateContentsSize = Roact.createBinding(Vector2.new())
 
 	self.state = {
 		connections = nil,
@@ -52,10 +51,6 @@ function ViewWindow:init()
 			self.nextUpdate = nil
 			self.props.Reload()
 		end
-	end
-
-	self.contentsSizeChanged = function(rbx)
-		self.updateContentsSize(rbx.AbsoluteSize)
 	end
 end
 
@@ -208,6 +203,28 @@ function ViewWindow:updateTree(target)
 	end
 end
 
+function ViewWindow:unmountTree()
+	local success, traceback, scriptInfo
+	xpcall(function()
+		if self.handle then
+			self.ThirdPartyRoact.unmount(self.handle)
+			self.handle = nil
+		end
+		success = true
+	end, function(err)
+		traceback, scriptInfo = DynamicRequire.GetErrorTraceback(err, debug.traceback())
+		ComponentErrorReporter(string.format("Roact-Visualizer: Tree Error during unmount:\n\t%s", traceback))
+		if self.state.target then
+			self.state.target:ClearAllChildren()
+		end
+		self.handle = nil
+		success = false
+	end)
+	if not success then
+		self:showErrorMessage("Tree encountered an error during unmount.", scriptInfo)
+	end
+end
+
 function ViewWindow:didUpdate(lastProps, lastState)
 	local state = self.state
 	local target = state.target
@@ -228,14 +245,10 @@ function ViewWindow:didUpdate(lastProps, lastState)
 		if target then
 			local success = self:updateTree(target)
 			if not success then
-				if self.handle then
-					self.ThirdPartyRoact.unmount(self.handle)
-					self.handle = nil
-				end
+				self:unmountTree()
 			end
 		elseif self.handle then
-			self.ThirdPartyRoact.unmount(self.handle)
-			self.handle = nil
+			self:unmountTree()
 		end
 
 		self:makeConnections()
@@ -263,7 +276,7 @@ function ViewWindow:render()
 	local state = self.state
 	local connections = state.connections
 
-	return Roact.createElement("ScrollingFrame", {
+	return Roact.createElement("Frame", {
 		ZIndex = 2,
 		BackgroundColor3 = getColor(function(c)
 			return theme:GetColor(c.Midlight)
@@ -273,13 +286,6 @@ function ViewWindow:render()
 		Size = UDim2.new(1, -8, 1, -68),
 		Position = UDim2.new(0, 4, 1, -34),
 		AnchorPoint = Vector2.new(0, 1),
-		CanvasSize = self.contentsSize:map(function(value)
-			return UDim2.fromOffset(value.X, value.Y)
-		end),
-		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = getColor(function(c)
-			return theme:GetColor(c.DimmedText)
-		end),
 	}, {
 		SelectWindow = props.RootModule == nil
 			and Roact.createElement(SelectWindow) or nil,
@@ -293,7 +299,6 @@ function ViewWindow:render()
 			BackgroundTransparency = 1,
 			Size = center and UDim2.fromScale(0, 0) or UDim2.fromScale(1, 1),
 			AutomaticSize = center and Enum.AutomaticSize.XY or Enum.AutomaticSize.None,
-			[Roact.Change.AbsoluteSize] = self.contentsSizeChanged,
 			[Roact.Ref] = self.targetRef,
 		}),
 
@@ -311,12 +316,7 @@ function ViewWindow:render()
 end
 
 function ViewWindow:willUnmount()
-	if self.handle then
-		local props = self.props
-		local ThirdPartyRoact = DynamicRequire.RequireStaticModule(props.RoactInstall)
-		ThirdPartyRoact.unmount(self.handle)
-		self.handle = nil
-	end
+	self:unmountTree()
 end
 
 ViewWindow = RoactRodux.connect(function(state)
